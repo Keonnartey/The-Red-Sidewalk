@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "The-Red-Sidewalk"
 version = "2025.02.25"
 
-requires-python = ">=3.12"
 [project.optional-dependencies]
 
 dev = ["pytest", "pytest-cov"]
