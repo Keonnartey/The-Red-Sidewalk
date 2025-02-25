@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "The-Red-Sidewalk"
+version = "2025.02.25"
+
+requires-python = ">=3.12"
+[project.optional-dependencies]
+
+dev = ["pytest", "pytest-cov"]
+[tool.pytest.ini_options]
+
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--cov=src --cov-report=html --cov-branch"
