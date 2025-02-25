@@ -5,9 +5,12 @@ install:
 
 format:	
 	black *.py 
-
 lint:
-	pylint --disable=R,C --ignore-patterns=test_.*?py *.py
+	if ls *.py 1> /dev/null 2>&1; then \
+		pylint --disable=R,C --ignore-patterns=test_.*?py *.py; \
+	else \
+		echo "No Python files to lint."; \
+	fi
 
 container-lint:
 	docker run --rm -i hadolint/hadolint < Dockerfile
