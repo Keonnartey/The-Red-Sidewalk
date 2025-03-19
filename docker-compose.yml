@@ -1,0 +1,32 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    container_name: redsidewalk-db
+    environment:
+      POSTGRES_USER: redsidewalk_user       # PostgreSQL username
+      POSTGRES_PASSWORD: securepassword     # PostgreSQL password
+      POSTGRES_DB: redsidewalk              # PostgreSQL database name
+    ports:
+      - "5432:5432"                         # Exposes port 5432 for local access
+    volumes:
+      - ./db/redsidewalk_dump.sql:/docker-entrypoint-initdb.d/redsidewalk_dump.sql  # Initializes DB with dump
+
+  web:
+    build: .
+    container_name: redsidewalk-flask
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"  # Exposes the Flask app on port 5000
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=redsidewalk
+      - DB_USER=redsidewalk_user
+      - DB_PASSWORD=securepassword
+    volumes:
+      - .:/app   # Mounts the current directory as a volume in the container
+
