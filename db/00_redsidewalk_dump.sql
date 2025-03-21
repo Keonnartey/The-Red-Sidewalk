@@ -37,3 +37,4 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (user_id, full_name, user_address, birthday, created_at) VALUES (1, 'abcdef', '1234 main st', '1999-01-01', '2024-01-01 00:00:00')
 ON CONFLICT (user_id) DO NOTHING;  -- Prevents errors if the user already exists
 
+

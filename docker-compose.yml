@@ -10,7 +10,8 @@ services:
     ports:
       - "5432:5432"                         # Exposes port 5432 for local access
     volumes:
-      - ./db/redsidewalk_dump.sql:/docker-entrypoint-initdb.d/redsidewalk_dump.sql  # Initializes DB with dump
+      - ./db:/docker-entrypoint-initdb.d 
+      # Initializes DB with dump
 
   web:
     build: .

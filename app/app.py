@@ -15,9 +15,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the SQLAlchemy object
 db = SQLAlchemy(app)
 
+
 @app.route('/')
-def index():
-    return "Hello, Flask is connected to PostgreSQL!"
+def home():
+    try:
+        result = db.session.execute('SELECT 1')
+        return "Database is connected and working!"
+    except Exception as e:
+        return f"Database connection failed: {str(e)}"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
