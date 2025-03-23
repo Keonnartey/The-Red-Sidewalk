@@ -14,7 +14,8 @@ services:
       # Initializes DB with dump
 
   web:
-    build: .
+    build:
+      context: ./backend
     container_name: redsidewalk-flask
     depends_on:
       - db
@@ -29,5 +30,7 @@ services:
       - DB_USER=redsidewalk_user
       - DB_PASSWORD=securepassword
     volumes:
-      - .:/app   # Mounts the current directory as a volume in the container
+      - ./backend:/backend  # Mounts the current directory as a volume in the container
+
+    command: flask run --host=0.0.0.0 --port=5000
 

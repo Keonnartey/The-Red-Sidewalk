@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,7 +20,7 @@ db = SQLAlchemy(app)
 @app.route('/')
 def home():
     try:
-        result = db.session.execute('SELECT 1')
+        result = db.session.execute(text('SELECT 1'))
         return "Database is connected and working!"
     except Exception as e:
         return f"Database connection failed: {str(e)}"
