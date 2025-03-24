@@ -7,4 +7,6 @@ psycopg2-binary
 fastapi
 uvicorn
 geojson
+fastapi
+sqlalchemy
 

@@ -1,7 +1,7 @@
 version: '3'
 services:
   db:
-    image: postgis/postgis:14-3.3
+    image: postgis/postgis:15-3.3
     container_name: redsidewalk-db
     environment:
       POSTGRES_USER: redsidewalk_user       # PostgreSQL username
@@ -12,25 +12,43 @@ services:
     volumes:
       - ./db:/docker-entrypoint-initdb.d 
       # Initializes DB with dump
+      - postgres_data:/var/lib/postgresql/data
+      # persistent volume after container stops
 
-  web:
+
+  backend:
     build:
       context: ./backend
-    container_name: redsidewalk-flask
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
     depends_on:
       - db
-    ports:
-      - "5000:5000"  # Exposes the Flask app on port 5000
-    environment:
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=redsidewalk
-      - DB_USER=redsidewalk_user
-      - DB_PASSWORD=securepassword
-    volumes:
-      - ./backend:/backend  # Mounts the current directory as a volume in the container
 
-    command: flask run --host=0.0.0.0 --port=5000
+volumes:
+  postgres_data:
+
+  # web:
+  #   build:
+  #     context: ./backend
+  #   container_name: redsidewalk-flask
+  #   depends_on:
+  #     - db
+  #   ports:
+  #     - "5000:5000"  # Exposes the Flask app on port 5000
+  #   environment:
+  #     - FLASK_APP=app.py
+  #     - FLASK_ENV=development
+  #     - DB_HOST=db
+  #     - DB_PORT=5432
+  #     - DB_NAME=redsidewalk
+  #     - DB_USER=redsidewalk_user
+  #     - DB_PASSWORD=securepassword
+  #   volumes:
+  #     - ./backend:/backend  # Mounts the current directory as a volume in the container
+
+  #   command: flask run --host=0.0.0.0 --port=5000
 
