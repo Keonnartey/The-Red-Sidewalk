@@ -1,7 +1,7 @@
 version: '3'
 services:
   db:
-    image: postgres:latest
+    image: postgis/postgis:14-3.3
     container_name: redsidewalk-db
     environment:
       POSTGRES_USER: redsidewalk_user       # PostgreSQL username

@@ -24,20 +24,31 @@ INSERT INTO info.locations (location_id, location_name, latitude, longitude) VAL
 (4, 'Flatwoods, West Virginia', 38.6790, -80.6515),
 (5, 'Area 51, Nevada', 37.2350, -115.8111);
 
--- Dummy data for info.sightings_preview
+-- Dummy data for info.sightings_preview (with GIS geometry)
 INSERT INTO info.sightings_preview (
     user_id,
     creature_id,
-    location_id,
+    location_name,
     description_short,
     height_inch,
-    sighting_date
+    sighting_date,
+    geom
 ) VALUES
-(1, 1, 1, 'Spotted a large creature with humps swimming.', 180, '2024-03-01'),
-(2, 2, 2, 'Saw a tall hairy figure in the woods.', 90, '2024-02-15'),
-(3, 3, 3, 'Strange animal seen near livestock.', 36, '2024-01-10'),
-(4, 4, 4, 'Winged figure flying over bridge.', 78, '2024-01-25'),
-(5, 5, 5, 'Giant tentacles emerging from the ocean.', 300, '2024-03-10');
+(1, 1, 'Point Pleasant, WV', 'Tall figure with glowing red eyes spotted near the bridge.', 78, '2024-03-01',
+    ST_SetSRID(ST_MakePoint(-82.1371, 38.8487), 4326)),
+
+(2, 2, 'Bluff Creek, CA', 'Large hairy creature seen crossing a creek.', 96, '2024-02-15',
+    ST_SetSRID(ST_MakePoint(-123.8000, 41.3000), 4326)),
+
+(3, 3, 'El Yunque National Forest, PR', 'Strange creature attacking livestock.', 36, '2024-01-10',
+    ST_SetSRID(ST_MakePoint(-65.7670, 18.2955), 4326)),
+
+(4, 4, 'Flatwoods, WV', 'Hovering creature with glowing eyes witnessed by local residents.', 72, '2024-01-25',
+    ST_SetSRID(ST_MakePoint(-80.6515, 38.6790), 4326)),
+
+(5, 5, 'Area 51, NV', 'Enormous tentacles rising from the desert sands.', 300, '2024-03-10',
+    ST_SetSRID(ST_MakePoint(-115.8111, 37.2350), 4326));
+
 
 -- Dummy data for social.interactions
 INSERT INTO social.interactions (

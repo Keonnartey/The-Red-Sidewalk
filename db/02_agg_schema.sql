@@ -40,15 +40,14 @@ CREATE TABLE IF NOT EXISTS info.sightings_preview (
     sighting_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     creature_id INT NOT NULL,
-    location_id INT NOT NULL,
+    location_name VARCHAR(255),
     description_short VARCHAR(255) NOT NULL,
     height_inch INT NOT NULL,
     sighting_date DATE NOT NULL,
+    geom geometry(Point, 4326) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    FOREIGN KEY (creature_id) REFERENCES agg.creatures(creature_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    FOREIGN KEY (location_id) REFERENCES info.locations(location_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
-
+    FOREIGN KEY (creature_id) REFERENCES agg.creatures(creature_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
 ------------------------------------------------------------
