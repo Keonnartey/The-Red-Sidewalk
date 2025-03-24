@@ -68,7 +68,7 @@ export default function CreatureIcon({ type, position, color = "#dacfff", size =
 }
 
 // Custom Icons
-export function GhostIcon({ color = "black", size = 24 }) {
+export function GhostIcon({ color = "Blue-ish", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -79,7 +79,7 @@ export function GhostIcon({ color = "black", size = 24 }) {
   )
 }
 
-export function BigfootIcon({ color = "black", size = 24 }) {
+export function BigfootIcon({ color = "Blue-ish", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -90,7 +90,7 @@ export function BigfootIcon({ color = "black", size = 24 }) {
   )
 }
 
-export function DragonIcon({ color = "black", size = 24 }) {
+export function DragonIcon({ color = "Blue-ish", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -101,7 +101,7 @@ export function DragonIcon({ color = "black", size = 24 }) {
   )
 }
 
-export function AlienIcon({ color = "black", size = 24 }) {
+export function AlienIcon({ color = "Blue-ish", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path

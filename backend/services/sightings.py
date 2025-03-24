@@ -22,6 +22,14 @@ def get_all_sightings(db: Session):
 
     features = []
 
+    creature_types = {
+    1: "ghost",
+    2: "bigfoot",
+    3: "dragon",
+    4: "alien",
+    5: "sun"
+    }
+
     for row in rows:
         feature = Feature(
             geometry=Point((row.longitude, row.latitude)),
@@ -29,6 +37,7 @@ def get_all_sightings(db: Session):
                 "sighting_id": row.sighting_id,
                 "user_id": row.user_id,
                 "creature_id": row.creature_id,
+                "creature_type": creature_types.get(row.creature_id, "ghost"),
                 "location_name": row.location_name,
                 "description": row.description_short,
                 "height_inch": row.height_inch,

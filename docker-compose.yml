@@ -28,6 +28,18 @@ services:
     depends_on:
       - db
 
+  frontend:
+    build: ./cryptid-sightings
+    container_name: frontend
+    ports:
+      - "3000:3000"  # Next.js dev server
+    volumes:
+      - ./cryptid-sightings:/app  # Watch local files for hot reload
+      - /app/node_modules # Avoid overwriting node_modules
+    command: npm run dev
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
 
