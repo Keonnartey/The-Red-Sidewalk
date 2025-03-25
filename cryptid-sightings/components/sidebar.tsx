@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Filter, BarChart2, Users, BookOpen, User } from "lucide-react"
+import { Filter, Users, BookOpen, User, MapPinPlus, MapPinned } from "lucide-react"
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -13,13 +13,19 @@ export default function Sidebar() {
         href="/"
         className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${pathname === "/" ? "bg-[#dacfff]" : "bg-white"}`}
       >
-        <Filter className={`w-10 h-10 ${pathname === "/" ? "text-[#1e1d4a]" : "text-[#1e1d4a]"}`} />
+        <MapPinned className={`w-10 h-10 ${pathname === "/" ? "text-[#1e1d4a]" : "text-[#1e1d4a]"}`} />
+      </Link>      
+      <Link
+        href="/filter"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${pathname === "/filter" ? "bg-[#dacfff]" : "bg-white"}`}
+      >
+        <Filter className={`w-10 h-10 ${pathname === "/filter" ? "text-[#1e1d4a]" : "text-[#1e1d4a]"}`} />
       </Link>
       <Link
         href="/report"
         className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${pathname === "/report" ? "bg-[#dacfff]" : "bg-white"}`}
       >
-        <BarChart2 className={`w-10 h-10 ${pathname === "/report" ? "text-[#1e1d4a]" : "text-[#1e1d4a]"}`} />
+        <MapPinPlus className={`w-10 h-10 ${pathname === "/report" ? "text-[#1e1d4a]" : "text-[#1e1d4a]"}`} />
       </Link>
       <Link
         href="/discuss"
