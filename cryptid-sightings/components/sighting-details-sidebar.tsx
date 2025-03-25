@@ -1,5 +1,8 @@
-// /components/sighting-details-sidebar.tsx
+"use client";
+
 import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 
 interface SightingDetailsSidebarProps {
   sighting: {
@@ -16,7 +19,14 @@ interface SightingDetailsSidebarProps {
 }
 
 const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sighting, onClose }) => {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  const content = (
     <motion.div
       initial={{ x: "100%" }}
       animate={{ x: 0 }}
@@ -49,6 +59,12 @@ const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sightin
       </div>
     </motion.div>
   );
+
+  // Prevent rendering until after client mount (avoids hydration mismatch)
+  if (!mounted) return null;
+
+  // Render outside of normal component tree
+  return createPortal(content, document.body);
 };
 
 export default SightingDetailsSidebar;
