@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- Ensure the database exists, create it if it doesn't
 DO
 $$

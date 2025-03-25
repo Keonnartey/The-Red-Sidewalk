@@ -1,0 +1,12 @@
+pandas
+numpy
+flask
+flask_sqlalchemy
+python-dotenv
+psycopg2-binary
+fastapi
+uvicorn
+geojson
+fastapi
+sqlalchemy
+
