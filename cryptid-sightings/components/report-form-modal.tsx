@@ -11,6 +11,39 @@ interface ReportFormModalProps {
 export default function ReportFormModal({ onClose }: ReportFormModalProps) {
 
   const router = useRouter();
+
+  const handleLocationInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, location_name: value }));
+  
+    if (value.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+  
+    const res = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        value
+      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+    );
+    const data = await res.json();
+    setSuggestions(data.features || []);
+  };
+  
+  const handleSelectSuggestion = (place: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      location_name: place.place_name,
+      latitude: place.center[1], // [lng, lat]
+      longitude: place.center[0],
+    }));
+    setSuggestions([]);
+  };
+  
+
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   
   const creatureTypeMap: Record<string, number> = {
     ghost: 1,
@@ -30,9 +63,11 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
     longitude: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
 
@@ -155,18 +190,33 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
             />
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium">Location Name</label>
             <input
               type="text"
               name="location_name"
               value={formData.location_name}
-              onChange={handleChange}
+              onChange={handleLocationInputChange}
               required
               className="w-full border rounded p-2"
-              placeholder="e.g. Bluff Creek, CA"
+              placeholder="Start typing a city..."
+              autoComplete="off"
             />
+            {suggestions.length > 0 && (
+              <ul className="absolute bg-white border border-gray-300 mt-1 rounded w-full max-h-48 overflow-y-auto z-[1200]">
+                {suggestions.map((place, index) => (
+                  <li
+                    key={index}
+                    onClick={() => handleSelectSuggestion(place)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {place.place_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-4">
             <div>
