@@ -1,18 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import Image from "next/image"
 
+interface CreatureData {
+  height: string;
+  weight: string;
+  locations: string;
+}
+
 export default function CreaturesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCreature, setSelectedCreature] = useState<string | null>("bigfoot")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCreature, setSelectedCreature] = useState<string | null>(null);
+  const [creatureData, setCreatureData] = useState<CreatureData | null>(null);
+
+  useEffect(() => {
+    const fetchCreatureData = async () => {
+      if (!selectedCreature) return; // Only fetch if a creature is selected
+
+      try {
+        const response = await fetch("http://localhost:8000/sightings"); // Adjust API route as needed
+        const data = await response.json();
+        setCreatureData({
+          height: data.height || "Unknown",
+          weight: data.weight || "Unknown",
+          locations: data.locations || "Unknown",
+        });
+      } catch (error) {
+        console.error("Error fetching creature data:", error);
+      }
+    };
+
+    fetchCreatureData();
+  }, [selectedCreature]); // Re-fetch when selectedCreature changes
 
   const closeCreatureDetails = () => {
-    setSelectedCreature(null)
-  }
+    setSelectedCreature(null);
+    setCreatureData(null);
+  };
+
+
 
   return (
     <div className="min-h-screen bg-[#1e2a44] p-6">
@@ -153,17 +183,17 @@ export default function CreaturesPage() {
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
                       <h3 className="text-lg font-bold mb-2">AVERAGE HEIGHT</h3>
-                      <p className="text-xl">6 - 15 feet</p>
+                      <p className="text-xl">{creatureData.height}</p>
                     </div>
                     <div>
                       <h3 className="text-lg font-bold mb-2">AVERAGE WEIGHT</h3>
-                      <p className="text-xl">600 pounds</p>
+                      <p className="text-xl">{creatureData.weight}</p>
                     </div>
                   </div>
 
                   <div className="mb-6">
                     <h3 className="text-lg font-bold mb-2">LOCATIONS FOUND:</h3>
-                    <p className="text-xl">North America</p>
+                    <p className="text-xl">{creatureData.locations}</p>
                   </div>
                 </div>
               </div>
@@ -242,3 +272,4 @@ export default function CreaturesPage() {
   )
 }
 
+ 
