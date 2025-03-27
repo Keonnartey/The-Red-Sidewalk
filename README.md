@@ -18,7 +18,7 @@ This repository uses the [Mapbox Places API](https://docs.mapbox.com/api/search/
 
 To use this feature:
 
-1. Create a file called `.env.local` in the frontend directory
+1. Create a file called `.env.local` in the `/cryptid-sightings` directory
 2. Paste this into it:
 
 `NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_actual_token_here`
