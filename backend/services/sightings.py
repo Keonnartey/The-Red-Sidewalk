@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session
 from geojson import Feature, FeatureCollection, Point
 from sqlalchemy import text
-from typing import List, Optional
 
-def get_all_sightings(db: Session,  creature_types: Optional[List[str]], seasons: Optional[List[str]]):
+def get_all_sightings(db: Session):
     sql = text("""
         SELECT 
             sighting_id,
@@ -16,29 +15,9 @@ def get_all_sightings(db: Session,  creature_types: Optional[List[str]], seasons
             created_at,
             ST_X(geom) AS longitude,
             ST_Y(geom) AS latitude
-        FROM 
-            info.sightings_preview
-        WHERE 1=1;
+        FROM info.sightings_preview;
     """)
-
-    params = {}
-
-    if creature_types:
-        sql = sql.text(sql.text + " AND creature_id = ANY(:creature_types)")
-        params['creature_types'] = creature_types
-
-    if seasons:
-        sql =  sql.text(sql.text + " AND EXTRACT(MONTH FROM sighting_date) = ANY(:season_months)")
-        season_months = {
-            "spring": [3, 4, 5],
-            "summer": [6, 7, 8],
-            "fall": [9, 10, 11],
-            "winter": [12, 1, 2]
-        }
-        params["season_months"] = [month for season in seasons for month in season_months.get(season.lower(), [])]
-
-
-    result = db.execute(sql, params)
+    result = db.execute(sql)
     rows = result.fetchall()
 
     features = []

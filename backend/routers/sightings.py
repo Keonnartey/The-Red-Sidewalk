@@ -7,5 +7,5 @@ from typing import List, Optional
 router = APIRouter()
 
 @router.get("/")
-def get_all_sightings(db: Session = Depends(get_db), creature_types: Optional[List[str]] = Query(None), seasons: Optional[List[str]] = Query(None)):
-    return sightings_service.get_all_sightings(db, creature_types, seasons)
+def get_all_sightings(db: Session = Depends(get_db)):
+    return sightings_service.get_all_sightings(db)
