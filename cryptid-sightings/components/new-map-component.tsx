@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import ReactDOMServer from "react-dom/server";
 import SightingDetailsSidebar from "./sighting-details-sidebar";
-import { GhostIcon, BigfootIcon, DragonIcon, AlienIcon} from "./creature-icons";
+import { GhostIcon, BigfootIcon, DragonIcon, AlienIcon } from "./creature-icons";
 
 const getCreatureDivIcon = (
   creatureType: string | number | undefined,
@@ -51,62 +51,69 @@ const getCreatureDivIcon = (
   });
 };
 
-
 const NewMapComponent = () => {
   const [selectedSighting, setSelectedSighting] = useState<any>(null);
+  const [sightingsData, setSightingsData] = useState<any[]>([]);
 
   useEffect(() => {
+    // Get filtered sightings from localStorage
+    const filteredSightings = localStorage.getItem("filteredSightings");
+    if (filteredSightings) {
+      const sightings = JSON.parse(filteredSightings);
+      setSightingsData(sightings);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sightingsData.length === 0) return; // Don't proceed if there's no data
+
     requestAnimationFrame(() => {
       const mapContainer = document.getElementById("map");
-  
+
       if (!mapContainer) {
         console.warn("🚨 Map container not found.");
         return;
       }
-  
+
       // 👇 Prevent re-initializing the map if it's already there
       if ((mapContainer as any)._leaflet_id != null) {
         console.warn("🛑 Map is already initialized, skipping.");
         return;
       }
-  
+
       const map = L.map(mapContainer).setView([20, 0], 2);
-  
+
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution:
           '&copy; <a href="https://carto.com/">CARTO</a> contributors | © OpenStreetMap',
         subdomains: "abcd",
       }).addTo(map);
-  
-      fetch("http://localhost:8000/sightings")
-        .then((res) => res.json())
-        .then((data) => {
-          data.features.forEach((sighting: any) => {
-            const coords = sighting.geometry.coordinates;
-            const props = sighting.properties;
-  
-            console.log("Sighting creature_type:", props.creature_type);
-  
-            const marker = L.marker([coords[1], coords[0]], {
-              icon: getCreatureDivIcon(props.creature_type, "#00FFC2"),
-            }).addTo(map);
-  
-            marker.on("click", () => {
-              setSelectedSighting({
-                ...props,
-                latitude: coords[1],
-                longitude: coords[0],
-              });
-            });
+
+      // Use the sightings data that is filtered based on creature type
+      sightingsData.forEach((sighting: any) => {
+        const { coordinates } = sighting;
+        const { creature_type, location_name, description } = sighting;
+
+        const marker = L.marker([coordinates.latitude, coordinates.longitude], {
+          icon: getCreatureDivIcon(creature_type, "#00FFC2"),
+        }).addTo(map);
+
+        marker.on("click", () => {
+          setSelectedSighting({
+            creature_type,
+            location_name,
+            description,
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
           });
         });
-  
+      });
+
       return () => {
         map.remove();
       };
     });
-  }, []);
-  
+  }, [sightingsData]);
 
   return (
     <>
