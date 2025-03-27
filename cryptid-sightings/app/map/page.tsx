@@ -1,4 +1,4 @@
-import NewMapComponent from "@/components/new-map-component";
+import NewMapComponent from "@/components/filter-map-component";
 
 export default function MapPage() {
   return (
