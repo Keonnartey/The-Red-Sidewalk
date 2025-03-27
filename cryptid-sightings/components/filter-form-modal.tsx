@@ -1,16 +1,44 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-interface ReportFormModalProps {
+
+interface FilterProps {
   onClose: () => void;
 }
-interface Sighting {
-  id: number;
-  creature_id: number;
-  // Add other sighting properties as needed
+
+interface Coordinates {
+  longitude: number;
+  latitude: number;
 }
-export default function ReportFormModal({ onClose }: ReportFormModalProps) {
+
+interface SightingProperties {
+  sighting_id: number;
+  user_id: number;
+  creature_id: number;
+  creature_type: string;
+  location_name: string;
+  description: string;
+  height_inch: number;
+  sighting_date: string;
+  created_at: string;
+}
+
+interface GeoJSONFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  properties: SightingProperties;
+}
+
+interface GeoJSONFeatureCollection {
+  type: "FeatureCollection";
+  features: GeoJSONFeature[];
+}
+
+export default function Filter({ onClose }: FilterProps) {
   const router = useRouter();
   const creatureTypeMap: Record<string, number> = {
     ghost: 1,
@@ -18,62 +46,71 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
     dragon: 3,
     alien: 4,
   };
+
   const [formData, setFormData] = useState({
     creature_type: "",
   });
-  const [allSightings, setAllSightings] = useState<Sighting[]>([]);
-  const [filteredSightings, setFilteredSightings] = useState<Sighting[]>([]);
-  // Fetch all sightings on component mount
-  useEffect(() => {
-    async function fetchAllSightings() {
-      try {
-        const res = await fetch("http://localhost:8000/sightings/all");
-        if (!res.ok) throw new Error("Failed to fetch sightings");
-        const data: Sighting[] = await res.json();
-        setAllSightings(data);
-      } catch (err) {
-        console.error("Error fetching sightings:", err);
-      }
-    }
-    fetchAllSightings();
-  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const creatureTypeKey = formData.creature_type.toLowerCase();
-    const creature_id = creatureTypeMap[creatureTypeKey];
-    if (!creature_id) {
+    const creature_id = Number(creatureTypeMap[creatureTypeKey]);
+
+    // Log the creature_id to see the exact value
+    console.log('Creature ID:', creature_id);
+
+    if (isNaN(creature_id)) {
       alert("Please select a valid creature type.");
       return;
     }
+
     try {
-      // Use the same approach as the successful filtering implementation
-      const res = await fetch(`http://localhost:8000/filters/filter_creature?creature_id=${creature_id}`, {
-        method: "GET",
+      // Ensure the URL is properly formed with creature_id as an integer
+      const url = `http://localhost:8000/filters/filter_creature?creature_id=${creature_id}`;
+      
+      console.log('Fetching URL:', url);  // Log the full URL to verify it
+
+      const res = await fetch(url, {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
+
       if (!res.ok) {
-        throw new Error("Failed to retrieve sightings.");
+        const errorBody = await res.text();
+        console.error(`HTTP error! status: ${res.status}, body: ${errorBody}`);
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-      const data = await res.json();
-      console.log(":white_check_mark: Filtered sightings:", data);
-      // Store the filtered sightings in state or context for use in the destination page
-      // You could use localStorage, context API, or state management like Redux
-      localStorage.setItem('filteredSightings', JSON.stringify(data));
-      onClose(); // Close the modal
-      router.push("/"); // Navigate to home
-      // No need to refresh the page, instead the destination page should load the filtered data
-      // The refresh is causing state to be lost
+
+      const data: GeoJSONFeatureCollection = await res.json();
+
+      // Transform the GeoJSON to a more frontend-friendly format
+      const transformedSightings = data.features.map(feature => ({
+        ...feature.properties,
+        coordinates: {
+          longitude: feature.geometry.coordinates[0],
+          latitude: feature.geometry.coordinates[1]
+        }
+      }));
+
+      // Store the transformed sightings in localStorage
+      localStorage.setItem('filteredSightings', JSON.stringify(transformedSightings));
+      localStorage.setItem('currentCreatureType', formData.creature_type);
+
+      onClose();
+      router.push("/map"); // Navigate to map page to display filtered sightings
     } catch (err) {
-      console.error(":x: Filtering error:", err);
-      alert("Something went wrong filtering the sightings.");
+      console.error("Filtering error:", err);
+      alert("Something went wrong filtering the sightings. Please check the console for more details.");
     }
   };
+
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black bg-opacity-50">
       <motion.div
@@ -82,7 +119,6 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
         exit={{ scale: 0.95, opacity: 0 }}
         className="relative bg-white rounded-lg shadow-xl w-full max-w-lg p-6 overflow-y-auto max-h-[90vh]"
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl"
