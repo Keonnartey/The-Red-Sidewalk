@@ -1,49 +1,26 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-def get_avgs(db: Session):
+def get_avgs(db: Session, creature_name: str):
     sql = text("""
         SELECT 
-            sighting_id,
-            user_id,
-            creature_id,
-            location_name,
-            description_short,
-            height_inch,
-            sighting_date,
-            created_at,
-            ST_X(geom) AS longitude,
-            ST_Y(geom) AS latitude
-        FROM info.sightings_preview;
+           AVG(height_inch) AS avg_height
+
+        FROM info.sightings_preview i, agg.creatures a
+        WHERE i.creature_id = a.creature_id AND LOWER(a.creature_name) = LOWER(:creature_name)
+        GROUP BY i.creature_id       
+               ;
     """)
-    result = db.execute(sql)
-    rows = result.fetchall()
+    stmt = text("""
+        SELECT avg_height FROM agg.creatures WHERE LOWER(creature_name) = LOWER(:creature_name)
+""")
+    result = db.execute(sql, {"creature_name": creature_name}).fetchone()
 
-    features = []
+    if result:
+        return {
+                "height": f"{round(result.avg_height / 12, 2)} feet" if result.avg_height else "Unknown",
 
-    creature_types = {
-    1: "ghost",
-    2: "bigfoot",
-    3: "dragon",
-    4: "alien",
-    5: "sun"
-    }
-
-    for row in rows:
-        feature = Feature(
-            geometry=Point((row.longitude, row.latitude)),
-            properties={
-                "sighting_id": row.sighting_id,
-                "user_id": row.user_id,
-                "creature_id": row.creature_id,
-                "creature_type": creature_types.get(row.creature_id, "ghost"),
-                "location_name": row.location_name,
-                "description": row.description_short,
-                "height_inch": row.height_inch,
-                "sighting_date": row.sighting_date.isoformat() if row.sighting_date else None,
-                "created_at": row.created_at.isoformat() if row.created_at else None
             }
-        )
-        features.append(feature)
+    return {"height": "Unknown"}
 
-    return FeatureCollection(features)
+  

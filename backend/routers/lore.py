@@ -5,6 +5,6 @@ from services import avg_creature_info as creature_info
 
 router = APIRouter()
 
-@router.get("/")
-def get_all_sightings(db: Session = Depends(get_db)):
-    return creature_info.get_avgs(db)
+@router.get("/{creature_name}")
+def get_all_sightings(creature_name: str, db: Session = Depends(get_db)):
+    return creature_info.get_avgs(db, creature_name)
