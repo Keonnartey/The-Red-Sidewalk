@@ -7,6 +7,24 @@ psycopg2-binary
 fastapi
 uvicorn
 geojson
-fastapi
 sqlalchemy
+PyJWT
+
+pydantic
+pydantic[email]
+bcrypt==3.2.0 
+passlib==1.7.4
+# Authentication and security
+passlib[bcrypt] == 1.7.4
+
+PyJWT
+python-jose[cryptography]
+python-multipart
+cryptography
+
+# Database connectivity
+asyncpg
+
+# CORS middleware
+starlette
 
