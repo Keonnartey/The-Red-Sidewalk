@@ -219,27 +219,24 @@ INSERT INTO profile.social (user_id, friend_id) VALUES
 (5, 4);
 
 -- Dummy data for profile.user_badges
-INSERT INTO profile.user_badges (
-    user_id,
-    unique_creature_count,
-    total_sightings_count,
-    bigfoot_count,
-    dragon_count,
-    ghost_count,
-    alien_count,
-    vampire_count,
-    total_friends_count,
-    comments_count,
-    like_count,
-    pictures_count,
-    locations_count,
-    user_avg_rating
+INSERT INTO profile.user_badges_real (
+  user_id,
+  bigfoot_amateur,
+  lets_be_friends,
+  elite_hunter,
+  socialite,
+  diversify,
+  well_traveled,
+  hallucinator,
+  camera_ready,
+  dragon_rider
 ) VALUES
-(1, 3, 10, 2, 1, 0, 0, 0, 2, 4, 10, 3, 5, 4.5),
-(2, 2, 8, 1, 0, 1, 0, 0, 2, 3, 7, 2, 4, 3.8),
-(3, 4, 12, 3, 0, 0, 1, 0, 2, 5, 9, 4, 6, 4.2),
-(4, 1, 5, 0, 0, 0, 1, 0, 1, 2, 5, 1, 3, 3.5),
-(5, 5, 15, 4, 2, 1, 1, 1, 1, 6, 12, 5, 7, 4.9);
+  (1, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE),
+  (2, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+  (3, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE),
+  (4, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE),
+  (5, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE);
+
 
 -- Dummy data for profile.user_stats
 INSERT INTO profile.user_stats (

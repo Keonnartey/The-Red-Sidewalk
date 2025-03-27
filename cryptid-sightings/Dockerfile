@@ -10,6 +10,9 @@ COPY package*.json ./
 # Install while ignoring peer dep conflicts (dev-friendly)
 RUN npm install --legacy-peer-deps
 
+# Remove any previous .next folder before starting the dev server
+RUN rm -rf .next
+
 # Copy the rest of your code
 COPY . .
 
