@@ -1,6 +1,6 @@
 -- Dummy data for profile.security
 INSERT INTO profile.security (user_id, email, password_hash, failed_attempts, last_login) VALUES
-(1, 'user1@example.com', 'hashed_password_1', 0, CURRENT_TIMESTAMP),
+(1, 'user1@example.com', '$2b$12$Jv9Lkx0YB.AQgWK3YALc6.j0mZB/RZBb4BysgSJ/1fIBPVsHVa65m', 0, CURRENT_TIMESTAMP),
 (2, 'user2@example.com', 'hashed_password_2', 1, CURRENT_TIMESTAMP),
 (3, 'user3@example.com', 'hashed_password_3', 0, CURRENT_TIMESTAMP),
 (4, 'user4@example.com', 'hashed_password_4', 2, CURRENT_TIMESTAMP),
