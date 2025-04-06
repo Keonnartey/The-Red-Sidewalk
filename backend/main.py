@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import sightings, report, lore, users  # Example router import
+from routers import sightings, report, lore, users, discuss  # Example router import
 
 app = FastAPI()
 
@@ -34,3 +34,4 @@ app.include_router(sightings.router, prefix="/sightings", tags=["Sightings"])
 app.include_router(report.router, prefix="/reports", tags=["Report"])
 app.include_router(lore.router, prefix = '/lore', tags = ["Lore"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])  # Example router include
