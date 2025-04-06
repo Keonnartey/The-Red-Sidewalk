@@ -1,16 +1,78 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Camera } from "lucide-react"
+import LoginPage from "@/components/LoginPage" // Make sure the path is correct
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("badges")
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userData, setUserData] = useState(null)
+
+  // Check if user is already authenticated on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const storedUserData = localStorage.getItem('user')
+    
+    if (token && storedUserData) {
+      try {
+        setIsAuthenticated(true)
+        setUserData(JSON.parse(storedUserData))
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        // Clear potentially corrupted data
+        localStorage.removeItem('user')
+      }
+    }
+  }, [])
+
+  const handleGeneralClick = () => {
+    setActiveTab("general")
+    
+    // If not authenticated, show login modal
+    if (!isAuthenticated) {
+      setShowLoginModal(true)
+    }
+    // Otherwise, proceed to the General tab content
+  }
+
+  const handleLoginSuccess = (authData) => {
+    setShowLoginModal(false)
+    setIsAuthenticated(true)
+    
+    // Get user data from localStorage (set by LoginPage component)
+    const storedUserData = localStorage.getItem('user')
+    if (storedUserData) {
+      try {
+        setUserData(JSON.parse(storedUserData))
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+      }
+    }
+    
+    // You could also fetch fresh user data here if needed
+  }
+
+  const handleLogout = () => {
+    // Clear authentication data
+    localStorage.removeItem('token')
+    localStorage.removeItem('token_type')
+    localStorage.removeItem('user')
+    
+    setIsAuthenticated(false)
+    setUserData(null)
+  }
 
   return (
     <div className="min-h-screen bg-[#1e2a44] p-6">
-      <h1 className="text-white text-4xl font-bold mb-8">WELCOME BACK USER_ALPHA</h1>
+      <h1 className="text-white text-4xl font-bold mb-8">
+        {isAuthenticated && userData ? 
+          `WELCOME BACK ${userData.username || userData.first_name.toUpperCase()}` : 
+          "WELCOME BACK USER_ALPHA"}
+      </h1>
 
       <div className="grid md:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-8">
@@ -96,7 +158,7 @@ export default function ProfilePage() {
           <Button
             variant="outline"
             className={`w-full justify-start text-lg py-6 ${activeTab === "general" ? "bg-[#d9d9d9]" : "bg-[#d9d9d9] bg-opacity-70"}`}
-            onClick={() => setActiveTab("general")}
+            onClick={handleGeneralClick}
           >
             General
           </Button>
@@ -124,9 +186,27 @@ export default function ProfilePage() {
           >
             Settings
           </Button>
+
+          {isAuthenticated && (
+            <Button
+              variant="outline"
+              className="w-full justify-start text-lg py-6 bg-red-100 hover:bg-red-200 text-red-600"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={() => setShowLoginModal(false)}>
+          <div className="z-50 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <LoginPage onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
