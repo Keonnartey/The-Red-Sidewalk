@@ -47,6 +47,9 @@ def get_all_sightings(db: Session):
         )
         features.append(feature)
 
+<<<<<<< HEAD
+    return FeatureCollection(features)
+=======
     return FeatureCollection(features)
 =======
 from sqlalchemy.orm import Session
@@ -100,3 +103,4 @@ def get_all_sightings(db: Session):
 
     return FeatureCollection(features)
 >>>>>>> main
+>>>>>>> 3b6ba7de1c6fef58cb36dfd8b95993ba6dbcedfc

@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -279,6 +279,9 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
       </motion.div>
     </div>
   );
+<<<<<<< HEAD
+}
+=======
 }
 =======
 "use client";
@@ -513,3 +516,4 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
   );
 }
 >>>>>>> main
+>>>>>>> 3b6ba7de1c6fef58cb36dfd8b95993ba6dbcedfc
