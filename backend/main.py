@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import sightings, report, users  # Example router import
+from routers import sightings, report, lore, users  # Example router import
 
 app = FastAPI()
 
@@ -32,4 +32,5 @@ async def log_requests(request, call_next):
 # Include your routers here
 app.include_router(sightings.router, prefix="/sightings", tags=["Sightings"])
 app.include_router(report.router, prefix="/reports", tags=["Report"])
+app.include_router(lore.router, prefix = '/lore', tags = ["Lore"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
