@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from services import sightings as sightings_service
+from typing import List, Optional
 
 router = APIRouter()
 
