@@ -35,3 +35,4 @@ app.include_router(report.router, prefix="/reports", tags=["Report"])
 app.include_router(lore.router, prefix = '/lore', tags = ["Lore"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])  # Example router include
+
