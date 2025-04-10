@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 interface ReportFormModalProps {
   onClose: () => void;
@@ -10,7 +11,23 @@ interface ReportFormModalProps {
 
 export default function ReportFormModal({ onClose }: ReportFormModalProps) {
 
+  const [selectedPhotos, setSelectedPhotos] = useState<FileList | null>(null);
+
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showStatusPopup, setShowStatusPopup] = useState(false);
+
+  const [submissionComplete, setSubmissionComplete] = useState(false);
+
   const router = useRouter();
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   const handleLocationInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -74,6 +91,12 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSubmitting) return; // Prevent double-submission
+
+    setIsSubmitting(true);
+    setShowStatusPopup(true);
+    setSubmissionComplete(false);
+  
     const creatureTypeKey = formData.creature_type.toLowerCase();
     const creature_id = creatureTypeMap[creatureTypeKey];
   
@@ -82,46 +105,75 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
       return;
     }
   
-    // Build payload
-    const payload = {
-      user_id: 1, // mock
-      creature_id: creature_id,
-      location_name: formData.location_name,
-      description_short: formData.description,
-      height_inch: Number(formData.height_inch),
-      sighting_date: formData.sighting_date,
-      latitude: Number(formData.latitude),
-      longitude: Number(formData.longitude),
-    };
+    let photoKeys: string[] = [];
   
     try {
-      const res = await fetch("http://localhost:8000/reports", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      if (selectedPhotos && selectedPhotos.length > 0) {
+        // Step 1: Request pre-signed URLs
+        const res = await fetch("https://uvug5nut6k.execute-api.us-east-1.amazonaws.com/default/cryptids_lambda_presignedkey", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            num_photos: selectedPhotos.length,
+            content_types: Array.from(selectedPhotos).map((file) => file.type)
+          })
+        });
   
-      if (!res.ok) {
-        throw new Error("Failed to submit sighting.");
+        const { photos } = await res.json(); // { key, upload_url }[]
+  
+        // Step 2: Upload photos to S3 using pre-signed URLs
+        await Promise.all(
+          photos.map((photo: any, i: number) =>
+            fetch(photo.upload_url, {
+              method: "PUT",
+              headers: {
+                "Content-Type": selectedPhotos[i].type
+              },
+              body: selectedPhotos[i]
+            })
+          )
+        );
+  
+        // Step 3: Collect keys for backend payload
+        photoKeys = photos.map((p: any) => p.key);
       }
   
-      const data = await res.json();
-      console.log("✅ Submitted:", data);
-      
-      onClose();            // Close the modal
-
-      router.push("/");              // Navigate to home
-      setTimeout(() => {
-        window.location.reload();    // Then refresh the home page
-      }, 100); // slight delay to ensure navigation completes
-
+      // Final payload
+      const payload = {
+        user_id: 1, // mock
+        creature_id,
+        location_name: formData.location_name,
+        description_short: formData.description,
+        height_inch: Number(formData.height_inch),
+        sighting_date: formData.sighting_date,
+        latitude: Number(formData.latitude),
+        longitude: Number(formData.longitude),
+        photo_s3_keys: photoKeys
+      };
+  
+      const submitRes = await fetch("http://localhost:8000/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+  
+      if (!submitRes.ok) throw new Error("Failed to submit sighting.");
+  
+      console.log("✅ Submitted:", await submitRes.json());
+      setSubmissionComplete(true);
+      setIsSubmitting(false);
     } catch (err) {
-      console.error("❌ Submission error:", err);
+      console.error("❌ Error submitting:", err);
       alert("Something went wrong submitting your sighting.");
+      setIsSubmitting(false);
+      setSubmissionComplete(true);
     }
   };
+  
   
 
   return (
@@ -135,7 +187,10 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl"
+          disabled={isSubmitting}
+          className={`absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl ${
+            isSubmitting ? "cursor-not-allowed opacity-50" : ""
+          }`}
           aria-label="Close"
         >
           ×
@@ -268,14 +323,77 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium">Upload Photos</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={isSubmitting}
+              onChange={(e) => {
+                const files = e.target.files;
+                setSelectedPhotos(files);
+                if (files) {
+                  const urls = Array.from(files).map((file) => URL.createObjectURL(file));
+                  setPreviewUrls(urls);
+                }
+              }}
+              className="w-full border rounded p-2"
+            />
+          </div>
+
+          {previewUrls.length > 0 && (
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {previewUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Preview ${i}`}
+                  className="w-full h-24 object-cover rounded border"
+                />
+              ))}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-black text-white py-2 px-4 rounded hover:bg-gray-800"
+            disabled={isSubmitting}
+            className={`w-full text-white py-2 px-4 rounded ${
+              isSubmitting ? "bg-gray-500 cursor-not-allowed" : "bg-black hover:bg-gray-800"
+            }`}
           >
-            Submit Sighting
+            {isSubmitting ? "Submitting..." : "Submit Sighting"}
           </button>
+
         </form>
       </motion.div>
+      {showStatusPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-[1200] flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-80 text-center">
+            {!submissionComplete ? (
+              <>
+                <div className="w-10 h-10 mx-auto border-4 border-gray-300 border-t-black rounded-full animate-spin mb-4" />
+                <p className="text-lg font-medium">Processing New Sighting...</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold mb-2">✅ Sighting Recorded!</h3>
+                <button
+                  onClick={() => {
+                    setShowStatusPopup(false);
+                    onClose();
+                    router.push("/");
+                    setTimeout(() => window.location.reload(), 100);
+                  }}
+                  className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+                >
+                  Return to Map
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
