@@ -3,7 +3,8 @@ from typing import Dict, Any
 from sqlalchemy import text
 
 def insert_sighting(db: Session, body: Dict[str, Any]):
-    stmt = text("""
+    # Insert into sightings_preview and return the new sighting_id
+    preview_stmt = text("""
         INSERT INTO info.sightings_preview (
             user_id,
             creature_id,
@@ -22,9 +23,10 @@ def insert_sighting(db: Session, body: Dict[str, Any]):
             :sighting_date,
             ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)
         )
+        RETURNING sighting_id
     """)
 
-    db.execute(stmt, {
+    result = db.execute(preview_stmt, {
         "user_id": body["user_id"],
         "creature_id": body["creature_id"],
         "location_name": body["location_name"],
@@ -34,4 +36,20 @@ def insert_sighting(db: Session, body: Dict[str, Any]):
         "latitude": body["latitude"],
         "longitude": body["longitude"]
     })
+
+    sighting_id = result.scalar_one()
+
+    # Insert photo keys (if provided)
+    photo_keys = body.get("photo_s3_keys", [])
+    if photo_keys:
+        img_stmt = text("""
+            INSERT INTO info.sightings_imgs (sighting_id, img_url)
+            VALUES (:sighting_id, :img_url)
+        """)
+        for key in photo_keys:
+            db.execute(img_stmt, {
+                "sighting_id": sighting_id,
+                "img_url": key
+            })
+
     db.commit()
