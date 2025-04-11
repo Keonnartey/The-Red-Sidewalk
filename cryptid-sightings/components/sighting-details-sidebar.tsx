@@ -3,14 +3,18 @@
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
+import SightingPopupModal from "./sighting-popup-modal";
+
 
 interface SightingDetailsSidebarProps {
   sighting: {
+    sighting_id?: number; // 👈 add this
     creature_name: string;
     creature_type: string;
     description: string;
     location_name: string;
     height_inch: number;
+    weight_lb: number;
     sighting_date: string;
     latitude: number;
     longitude: number;
@@ -20,6 +24,8 @@ interface SightingDetailsSidebarProps {
 
 const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sighting, onClose }) => {
   const [mounted, setMounted] = useState(false);
+  const [selectedFullSighting, setSelectedFullSighting] = useState<any>(null);
+
 
   useEffect(() => {
     setMounted(true);
@@ -45,6 +51,9 @@ const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sightin
         <div>Height</div>
         <div className="font-bold text-right">{sighting.height_inch} inches</div>
 
+        <div>Weight</div>
+        <div className="font-bold text-right">{sighting.weight_lb} lbs</div>
+
         <div>Location</div>
         <div className="font-bold text-right">{sighting.location_name}</div>
 
@@ -57,14 +66,44 @@ const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sightin
         <div>Longitude</div>
         <div className="font-bold text-right">{sighting.longitude}</div>
       </div>
+      <div className="mt-4">
+        <button
+          onClick={async () => {
+            if (!sighting.sighting_id) return;
+
+            try {
+              const res = await fetch(`http://localhost:8000/sightings/${sighting.sighting_id}`);
+              const fullData = await res.json();
+              console.log("📸 Full sighting detail:", fullData);
+              setSelectedFullSighting(fullData);
+            } catch (err) {
+              console.error("❌ Failed to fetch full sighting:", err);
+              alert("Something went wrong.");
+            }
+          }}
+          className="w-full bg-black text-white py-2 px-4 rounded hover:bg-gray-800"
+        >
+          More Info
+        </button>
+      </div>
+
     </motion.div>
   );
 
   // Prevent rendering until after client mount (avoids hydration mismatch)
   if (!mounted) return null;
 
-  // Render outside of normal component tree
-  return createPortal(content, document.body);
+  return (
+    <>
+      {createPortal(content, document.body)}
+      {selectedFullSighting && (
+        <SightingPopupModal
+          data={selectedFullSighting}
+          onClose={() => setSelectedFullSighting(null)}
+        />
+      )}
+    </>
+  );
 };
 
 export default SightingDetailsSidebar;

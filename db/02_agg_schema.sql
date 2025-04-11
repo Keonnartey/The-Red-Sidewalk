@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS info.sightings_preview (
     location_name VARCHAR(255),
     description_short VARCHAR(255) NOT NULL,
     height_inch INT NOT NULL,
+    weight_lb INT NOT NULL,
     sighting_date DATE NOT NULL,
     geom geometry(Point, 4326) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

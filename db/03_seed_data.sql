@@ -24,98 +24,78 @@ INSERT INTO info.locations (location_id, location_name, latitude, longitude) VAL
 (4, 'Flatwoods, West Virginia', 38.6790, -80.6515),
 (5, 'Area 51, Nevada', 37.2350, -115.8111);
 
--- Global dummy data for info.sightings_preview
+-- Updated global dummy data for info.sightings_preview with weight_lb
 INSERT INTO info.sightings_preview (
     user_id,
     creature_id,
     location_name,
     description_short,
     height_inch,
+    weight_lb,
     sighting_date,
     geom
 ) VALUES
--- Europe: Ghost in Scotland
-(1, 1, 'Edinburgh Castle, Scotland', 'Mist-like figure gliding through the castle courtyard.', 68, '2024-01-20',
+(1, 1, 'Edinburgh Castle, Scotland', 'Mist-like figure gliding through the castle courtyard.', 68, 20, '2024-01-20',
     ST_SetSRID(ST_MakePoint(-3.2000, 55.9486), 4326)),
 
--- North America: Bigfoot in Canada
-(2, 2, 'Banff National Park, Canada', 'Massive bipedal creature leaving deep tracks in the snow.', 96, '2024-02-04',
+(2, 2, 'Banff National Park, Canada', 'Massive bipedal creature leaving deep tracks in the snow.', 96, 750, '2024-02-04',
     ST_SetSRID(ST_MakePoint(-115.5708, 51.4968), 4326)),
 
--- Asia: Dragon over China
-(3, 3, 'Zhangjiajie National Forest, China', 'Winged serpent flying between sandstone pillars.', 220, '2024-03-03',
+(3, 3, 'Zhangjiajie National Forest, China', 'Winged serpent flying between sandstone pillars.', 220, 3200, '2024-03-03',
     ST_SetSRID(ST_MakePoint(110.4792, 29.3257), 4326)),
 
--- South America: Alien in Chile
-(4, 4, 'Atacama Desert, Chile', 'Bright lights and hovering being spotted at midnight.', 48, '2024-03-07',
+(4, 4, 'Atacama Desert, Chile', 'Bright lights and hovering being spotted at midnight.', 48, 90, '2024-03-07',
     ST_SetSRID(ST_MakePoint(-69.1112, -24.5000), 4326)),
 
--- Africa: Ghost in Egypt
-(5, 1, 'Giza Plateau, Egypt', 'Phantom figure moving near ancient tomb entrance.', 65, '2024-01-28',
+(5, 1, 'Giza Plateau, Egypt', 'Phantom figure moving near ancient tomb entrance.', 65, 30, '2024-01-28',
     ST_SetSRID(ST_MakePoint(31.1342, 29.9792), 4326)),
 
--- Oceania: Bigfoot-like creature in Australia
-(1, 2, 'Blue Mountains, Australia', 'Tall hairy creature sighted in eucalyptus forest.', 94, '2024-02-12',
+(1, 2, 'Blue Mountains, Australia', 'Tall hairy creature sighted in eucalyptus forest.', 94, 680, '2024-02-12',
     ST_SetSRID(ST_MakePoint(150.4020, -33.7125), 4326)),
 
--- Asia: Dragon in Bhutan
-(2, 3, 'Paro Valley, Bhutan', 'Dragon spotted circling over monastery rooftops.', 210, '2024-03-14',
+(2, 3, 'Paro Valley, Bhutan', 'Dragon spotted circling over monastery rooftops.', 210, 2900, '2024-03-14',
     ST_SetSRID(ST_MakePoint(89.4120, 27.4305), 4326)),
 
--- North America: Alien near Area 51
-(3, 4, 'Rachel, Nevada, USA', 'Glowing figure emerging from a field near Highway 375.', 52, '2024-02-24',
+(3, 4, 'Rachel, Nevada, USA', 'Glowing figure emerging from a field near Highway 375.', 52, 85, '2024-02-24',
     ST_SetSRID(ST_MakePoint(-115.7460, 37.6486), 4326)),
 
--- Europe: Ghost in France
-(4, 1, 'Mont Saint-Michel, France', 'Semi-transparent woman drifting above flooded causeway.', 62, '2024-01-30',
+(4, 1, 'Mont Saint-Michel, France', 'Semi-transparent woman drifting above flooded causeway.', 62, 15, '2024-01-30',
     ST_SetSRID(ST_MakePoint(-1.5115, 48.6361), 4326)),
 
--- South America: Bigfoot in Argentina
-(5, 2, 'Bariloche, Argentina', 'Bipedal creature seen at tree line during snowfall.', 88, '2024-03-10',
+(5, 2, 'Bariloche, Argentina', 'Bipedal creature seen at tree line during snowfall.', 88, 620, '2024-03-10',
     ST_SetSRID(ST_MakePoint(-71.3082, -41.1335), 4326)),
 
--- Antarctica: Alien sighting
-(2, 4, 'McMurdo Station, Antarctica', 'Unidentified being captured briefly on thermal cam.', 54, '2024-02-05',
+(2, 4, 'McMurdo Station, Antarctica', 'Unidentified being captured briefly on thermal cam.', 54, 70, '2024-02-05',
     ST_SetSRID(ST_MakePoint(166.6667, -77.8419), 4326)),
 
--- Japan (Ghost)
-(3, 1, 'Aokigahara Forest, Japan', 'White figure with no feet seen floating through the forest.', 66, '2024-03-21',
+(3, 1, 'Aokigahara Forest, Japan', 'White figure with no feet seen floating through the forest.', 66, 25, '2024-03-21',
     ST_SetSRID(ST_MakePoint(138.6846, 35.4876), 4326)),
 
--- Iceland (Dragon)
-(4, 3, 'Lake Lagarfljót, Iceland', 'Serpentine creature glimpsed below icy lake surface.', 280, '2024-02-18',
+(4, 3, 'Lake Lagarfljót, Iceland', 'Serpentine creature glimpsed below icy lake surface.', 280, 4700, '2024-02-18',
     ST_SetSRID(ST_MakePoint(-14.3666, 65.0833), 4326)),
 
--- Nigeria (Alien)
-(5, 4, 'Obudu Plateau, Nigeria', 'Small glowing being observed hovering near mountain huts.', 50, '2024-01-22',
+(5, 4, 'Obudu Plateau, Nigeria', 'Small glowing being observed hovering near mountain huts.', 50, 60, '2024-01-22',
     ST_SetSRID(ST_MakePoint(9.3612, 6.3793), 4326)),
 
--- Germany (Ghost)
-(1, 1, 'Heidelberg Castle, Germany', 'Spectral horse and rider galloped across the courtyard.', 74, '2024-03-02',
+(1, 1, 'Heidelberg Castle, Germany', 'Spectral horse and rider galloped across the courtyard.', 74, 45, '2024-03-02',
     ST_SetSRID(ST_MakePoint(8.7156, 49.4100), 4326)),
 
--- Peru (Bigfoot/Yeti)
-(2, 2, 'Andes Mountains, Peru', 'Large humanoid with fur spotted trekking snowy slope.', 98, '2024-03-16',
+(2, 2, 'Andes Mountains, Peru', 'Large humanoid with fur spotted trekking snowy slope.', 98, 800, '2024-03-16',
     ST_SetSRID(ST_MakePoint(-72.0000, -13.5000), 4326)),
 
--- South Korea (Alien)
-(3, 4, 'Jeju Island, South Korea', 'Metallic disc seen above forest—figure dropped silently.', 53, '2024-02-09',
+(3, 4, 'Jeju Island, South Korea', 'Metallic disc seen above forest—figure dropped silently.', 53, 77, '2024-02-09',
     ST_SetSRID(ST_MakePoint(126.5312, 33.4996), 4326)),
 
--- Ukraine (Dragon)
-(4, 3, 'Carpathian Mountains, Ukraine', 'Flaming trail in sky—winged shape briefly visible.', 240, '2024-03-12',
+(4, 3, 'Carpathian Mountains, Ukraine', 'Flaming trail in sky—winged shape briefly visible.', 240, 3500, '2024-03-12',
     ST_SetSRID(ST_MakePoint(24.0000, 48.1500), 4326)),
 
--- Indonesia (Ghost)
-(5, 1, 'Borobudur Temple, Indonesia', 'Shadowy woman with no face drifting between stupas.', 64, '2024-01-29',
+(5, 1, 'Borobudur Temple, Indonesia', 'Shadowy woman with no face drifting between stupas.', 64, 35, '2024-01-29',
     ST_SetSRID(ST_MakePoint(110.2038, -7.6079), 4326)),
 
--- Greenland (Alien)
-(1, 4, 'Kangerlussuaq, Greenland', 'Bright green object landed silently in snowfield.', 49, '2024-03-08',
+(1, 4, 'Kangerlussuaq, Greenland', 'Bright green object landed silently in snowfield.', 49, 68, '2024-03-08',
     ST_SetSRID(ST_MakePoint(-50.6833, 67.0167), 4326)),
 
--- India (Bigfoot/Yeti)
-(2, 2, 'Himalayas near Ladakh, India', 'Massive prints in snow followed by deep growling sounds.', 92, '2024-02-27',
+(2, 2, 'Himalayas near Ladakh, India', 'Massive prints in snow followed by deep growling sounds.', 92, 710, '2024-02-27',
     ST_SetSRID(ST_MakePoint(77.5833, 34.1526), 4326));
 
 

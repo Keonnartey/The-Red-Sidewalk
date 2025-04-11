@@ -20,6 +20,7 @@ interface SightingProperties {
   location_name: string;
   description: string;
   height_inch: number;
+  weight_lb: number;
   sighting_date: string;
   created_at: string;
 }
