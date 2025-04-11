@@ -40,10 +40,10 @@ def get_posts(
             s.created_at AS time_posted,
             'User ' || CAST(u.user_id AS TEXT) AS username,
             (SELECT SUM(i.upvote_count)
-             FROM social.interactions i
+             FROM info.sightings_full i
              WHERE i.sighting_id = s.sighting_id) AS upvotes,
             (SELECT SUM(i.downvote_count)
-             FROM social.interactions i
+             FROM info.sightings_full i
              WHERE i.sighting_id = s.sighting_id) AS downvotes
         FROM info.sightings_preview s
         LEFT JOIN profile.users u ON s.user_id = u.user_id
@@ -87,10 +87,11 @@ def get_posts(
                 i.comment_id,
                 i.user_id,
                 i.comment,
-                i.upvote_count,
-                i.downvote_count,
+                f.upvote_count,
+                f.downvote_count,
                 'User ' || CAST(u.user_id AS TEXT) AS username
             FROM social.interactions i
+            JOIN info.sightings_full f ON i.sighting_id = f.sighting_id
             LEFT JOIN profile.users u ON i.user_id = u.user_id
             WHERE i.sighting_id = ANY(:post_ids)
             ORDER BY i.comment_id ASC
@@ -129,24 +130,43 @@ def add_comment(
     """
     stmt = text("""
         INSERT INTO social.interactions (
-            comment_id, sighting_id, user_id, comment, upvote_count, downvote_count
+            comment_id, sighting_id, user_id, comment
         )
         VALUES (
             (SELECT COALESCE(MAX(comment_id), 0) + 1 FROM social.interactions),
             :sighting_id,
             :user_id,
-            :comment,
-            :upvote_count,
-            :downvote_count
+            :comment
         )
     """)
     db.execute(stmt, {
         "sighting_id": post_id,
         "user_id": 1,  # Forced user id for testing.
-        "comment": payload["comment"],
+        "comment": payload["comment"]
+    })
+
+    # Insert the votes
+    stmt_votes = text("""
+        INSERT INTO info.sightings_full (
+            sighting_id, user_id, upvote_count, downvote_count
+        )
+        VALUES (
+            :sighting_id,
+            :user_id,
+            :upvote_count,
+            :downvote_count
+        )
+        ON CONFLICT (sighting_id) DO UPDATE SET
+            upvote_count = EXCLUDED.upvote_count,
+            downvote_count = EXCLUDED.downvote_count
+    """)
+    db.execute(stmt_votes, {
+        "sighting_id": post_id,
+        "user_id": 1,
         "upvote_count": payload.get("upvote_count", 0),
         "downvote_count": payload.get("downvote_count", 0)
     })
+
     db.commit()
     return {"status": "success", "message": "Comment added"}
 
@@ -167,25 +187,22 @@ def upvote_post(
     
     # Try to update an existing vote row for user 100 where comment is NULL/empty
     update_stmt = text("""
-        UPDATE social.interactions
+        UPDATE info.sightings_full
         SET upvote_count = upvote_count + :increment
         WHERE sighting_id = :sighting_id
-          AND user_id = 1
-          AND (comment IS NULL OR comment = '')
+                AND user_id = 1
     """)
     result = db.execute(update_stmt, {"increment": increment, "sighting_id": post_id})
     
     # If no row was updated (user hasn't voted yet), insert a new vote row.
     if result.rowcount == 0:
         insert_stmt = text("""
-            INSERT INTO social.interactions (
-                comment_id, sighting_id, user_id, comment, upvote_count, downvote_count
+            INSERT INTO info.sightings_full (
+                sighting_id, user_id, upvote_count, downvote_count
             )
             VALUES (
-                (SELECT COALESCE(MAX(comment_id), 0) + 1 FROM social.interactions),
                 :sighting_id,
                 1,
-                NULL,
                 :upvote_count,
                 0
             )
@@ -211,24 +228,21 @@ def downvote_post(
     increment = payload.get("amount", 1)
     
     update_stmt = text("""
-        UPDATE social.interactions
+        UPDATE info.sightings_full
         SET downvote_count = downvote_count + :increment
         WHERE sighting_id = :sighting_id
-          AND user_id = 1
-          AND (comment IS NULL OR comment = '')
+            AND user_id = 1
     """)
     result = db.execute(update_stmt, {"increment": increment, "sighting_id": post_id})
     
     if result.rowcount == 0:
         insert_stmt = text("""
-            INSERT INTO social.interactions (
-                comment_id, sighting_id, user_id, comment, upvote_count, downvote_count
+            INSERT INTO info.sightings_full (
+                sighting_id, user_id, upvote_count, downvote_count
             )
             VALUES (
-                (SELECT COALESCE(MAX(comment_id), 0) + 1 FROM social.interactions),
                 :sighting_id,
                 1,
-                NULL,
                 0,
                 :downvote_count
             )
@@ -237,4 +251,3 @@ def downvote_post(
     
     db.commit()
     return {"status": "success", "message": "Post downvoted"}
-

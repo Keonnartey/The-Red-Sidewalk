@@ -1,77 +1,75 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import PostCard from "@/components/discuss/PostCard";
+import { useState, useEffect } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import PostCard from "@/components/discuss/PostCard"
 
 interface Comment {
-  comment_id: number;
-  user_id: number;
-  username: string;
-  comment: string;
-  upvote_count: number;
-  downvote_count: number;
+  comment_id: number
+  user_id: number
+  username: string
+  comment: string
+  upvote_count: number
+  downvote_count: number
 }
 
 interface Post {
-  post_id: number;
-  user_id: number;
-  username: string;
-  creature_name: string;  // e.g. "bigfoot"
-  location: string;
-  content: string;
-  time_posted: string;
-  upvotes: number | null;
-  downvotes: number | null;
-  comments: Comment[];
+  post_id: number
+  user_id: number
+  username: string
+  creature_name: string // e.g. "bigfoot"
+  location: string
+  content: string
+  time_posted: string
+  upvotes: number | null
+  downvotes: number | null
+  comments: Comment[]
 }
 
 export default function DiscussPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [creatureFilter, setCreatureFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([])
+  const [creatureFilter, setCreatureFilter] = useState("")
+  const [locationFilter, setLocationFilter] = useState("")
+  const [loading, setLoading] = useState(false)
 
   // -------------------------------------------
   // Fetch posts from your backend
   // -------------------------------------------
   async function fetchPosts() {
     try {
-      setLoading(true);
-      const queryParams = new URLSearchParams();
-      if (creatureFilter) queryParams.append("creature", creatureFilter);
-      if (locationFilter) queryParams.append("location", locationFilter);
+      setLoading(true)
+      const queryParams = new URLSearchParams()
+      if (creatureFilter) queryParams.append("creature", creatureFilter)
+      if (locationFilter) queryParams.append("location", locationFilter)
 
-      const res = await fetch(
-        `http://localhost:8000/discuss/posts?${queryParams.toString()}`
-      );
-      if (!res.ok) throw new Error("Failed to fetch posts");
-      const data: Post[] = await res.json();
-      setPosts(data);
+      const res = await fetch(`http://localhost:8000/discuss/posts?${queryParams.toString()}`)
+      if (!res.ok) throw new Error("Failed to fetch posts")
+      const data: Post[] = await res.json()
+      setPosts(data)
     } catch (err) {
-      console.error("Error fetching posts:", err);
+      console.error("Error fetching posts:", err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    fetchPosts()
+  }, [])
 
   // -------------------------------------------
   // Filter Handlers
   // -------------------------------------------
   function applyFilters() {
-    fetchPosts();
+    fetchPosts()
   }
 
   function clearFilters() {
-    setCreatureFilter("");
-    setLocationFilter("");
+    setCreatureFilter("")
+    setLocationFilter("")
     // Re-fetch with empty filters
-    fetchPosts();
+    fetchPosts()
   }
 
   // -------------------------------------------
@@ -79,37 +77,31 @@ export default function DiscussPage() {
   // -------------------------------------------
   async function handleUpvotePost(postId: number) {
     try {
-      const res = await fetch(
-        `http://localhost:8000/discuss/posts/${postId}/upvote`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: 1 }),
-        }
-      );
-      if (!res.ok) throw new Error("Failed to upvote post");
+      const res = await fetch(`http://localhost:8000/discuss/posts/${postId}/upvote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 1 }),
+      })
+      if (!res.ok) throw new Error("Failed to upvote post")
       // Re-fetch posts to see updated votes
-      fetchPosts();
+      fetchPosts()
     } catch (err) {
-      console.error("Error upvoting post:", err);
+      console.error("Error upvoting post:", err)
     }
   }
 
   async function handleDownvotePost(postId: number) {
     try {
-      const res = await fetch(
-        `http://localhost:8000/discuss/posts/${postId}/downvote`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: 1 }),
-        }
-      );
-      if (!res.ok) throw new Error("Failed to downvote post");
+      const res = await fetch(`http://localhost:8000/discuss/posts/${postId}/downvote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 1 }),
+      })
+      if (!res.ok) throw new Error("Failed to downvote post")
       // Re-fetch posts to see updated votes
-      fetchPosts();
+      fetchPosts()
     } catch (err) {
-      console.error("Error downvoting post:", err);
+      console.error("Error downvoting post:", err)
     }
   }
 
@@ -119,24 +111,21 @@ export default function DiscussPage() {
   async function handleAddComment(postId: number, commentText: string) {
     try {
       const payload = {
-        user_id: 1,          // or 100, or whichever user you want
+        user_id: 1, // or 100, or whichever user you want
         comment: commentText,
         upvote_count: 0,
         downvote_count: 0,
-      };
-      const res = await fetch(
-        `http://localhost:8000/discuss/posts/${postId}/comment`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      if (!res.ok) throw new Error("Failed to add comment");
+      }
+      const res = await fetch(`http://localhost:8000/discuss/posts/${postId}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error("Failed to add comment")
       // Re-fetch posts to display the new comment
-      fetchPosts();
+      fetchPosts()
     } catch (err) {
-      console.error("Error adding comment:", err);
+      console.error("Error adding comment:", err)
     }
   }
 
@@ -145,9 +134,7 @@ export default function DiscussPage() {
   // -------------------------------------------
   return (
     <div className="min-h-screen bg-[#1e2a44] p-6">
-      <h1 className="text-white text-4xl font-bold text-center mb-8">
-        DISCUSS SIGHTINGS WITH OTHERS
-      </h1>
+      <h1 className="text-white text-4xl font-bold text-center mb-8">DISCUSS SIGHTINGS WITH OTHERS</h1>
 
       {/* 130px offset for sidebar + center content */}
       <div className="pl-[130px]">
@@ -174,9 +161,7 @@ export default function DiscussPage() {
             </div>
           </div>
 
-          {loading && (
-            <p className="text-white text-center mb-4">Loading posts...</p>
-          )}
+          {loading && <p className="text-white text-center mb-4">Loading posts...</p>}
 
           {/* Posts */}
           <div className="grid md:grid-cols-2 gap-6">
@@ -186,12 +171,12 @@ export default function DiscussPage() {
                 post={post}
                 onUpvote={handleUpvotePost}
                 onDownvote={handleDownvotePost}
-                onAddComment={handleAddComment}
+                onAddComment={(postId, commentText) => handleAddComment(postId, commentText)}
               />
             ))}
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

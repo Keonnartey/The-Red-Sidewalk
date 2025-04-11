@@ -104,20 +104,18 @@ INSERT INTO social.interactions (
     comment_id,
     sighting_id,
     user_id,
-    comment,
-    upvote_count,
-    downvote_count
+    comment
 ) VALUES
-(1, 1, 2, 'This sounds legit! I saw something similar.', 10, 2),
-(2, 1, 3, 'I dont buy it, looks fake.', 3, 15),
-(3, 2, 1, 'Wow, Bigfoot strikes again!', 20, 1),
-(4, 3, 4, 'I heard the Chupacabra was spotted last week too.', 5, 0),
-(5, 4, 5, 'Mothman is definitely real.', 12, 3),
-(6, 5, 2, 'Kraken stories always freak me out.', 8, 1),
-(7, 5, 3, 'You need better evidence.', 2, 7),
-(8, 3, 1, 'I think it was a dog...', 0, 4),
-(9, 4, 2, 'This is why I dont go outside.', 6, 2),
-(10, 2, 5, 'Classic hoax location.', 4, 5);
+(1, 1, 2, 'This sounds legit! I saw something similar.'),
+(2, 1, 3, 'I dont buy it, looks fake.'),
+(3, 2, 1, 'Wow, Bigfoot strikes again!'),
+(4, 3, 4, 'I heard the Chupacabra was spotted last week too.'),
+(5, 4, 5, 'Mothman is definitely real.'),
+(6, 5, 2, 'Kraken stories always freak me out.'),
+(7, 5, 3, 'You need better evidence.'),
+(8, 3, 1, 'I think it was a dog...'),
+(9, 4, 2, 'This is why I dont go outside.'),
+(10, 2, 5, 'Classic hoax location.');
 
 -- Dummy data for social.ratings
 INSERT INTO social.ratings (

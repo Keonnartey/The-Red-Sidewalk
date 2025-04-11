@@ -60,8 +60,6 @@ CREATE TABLE IF NOT EXISTS social.interactions (
     sighting_id INT NOT NULL,
     user_id INT NOT NULL,
     comment TEXT,
-    upvote_count INT DEFAULT 0,
-    downvote_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
@@ -87,10 +85,14 @@ CREATE TABLE IF NOT EXISTS social.ratings (
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS info.sightings_full (
     sighting_id INT PRIMARY KEY,
-    description_full TEXT NOT NULL,
-    season VARCHAR(255) NOT NULL,
-    weather VARCHAR(255) NOT NULL,
-    FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+    user_id INT NOT NULL,
+    --description_full TEXT NOT NULL,
+    --season VARCHAR(255) NOT NULL,
+    --weather VARCHAR(255) NOT NULL,
+    upvote_count INT DEFAULT 0,
+    downvote_count INT DEFAULT 0,
+    FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
 ------------------------------------------------------------
