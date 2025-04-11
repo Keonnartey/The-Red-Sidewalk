@@ -8,13 +8,12 @@ INSERT INTO profile.security (user_id, email, password_hash, failed_attempts, la
 
 
 -- Dummy data for agg.creatures
-INSERT INTO agg.creatures (creature_id, creature_name, avg_rating, avg_height, avg_weight) VALUES
-(1, 'Ghost', 4.5, 15.2, 2000),
-(2, 'Bigfoot', 4.0, 7.8, 400),
-(3, 'Alien', 3.5, 3.1, 60),
-(4, 'Dragon', 4.2, 6.5, 120),
-(5, 'Vampire', 4.8, 30.0, 5000)
-;
+INSERT INTO agg.creatures (creature_id, creature_name) VALUES
+(1, 'Ghost'),
+(2, 'Bigfoot'),
+(3, 'Alien'),
+(4, 'Dragon'),
+(5, 'Vampire');
 
 
 -- Dummy data for info.locations (US-only)

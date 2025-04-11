@@ -4,11 +4,11 @@ from sqlalchemy import text
 def get_avgs(db: Session, creature_name: str):
     sql = text("""
         SELECT 
-           AVG(height_inch) AS avg_height
+           avg_height
 
-        FROM info.sightings_preview i, agg.creatures a
-        WHERE i.creature_id = a.creature_id AND LOWER(a.creature_name) = LOWER(:creature_name)
-        GROUP BY i.creature_id       
+        FROM agg.creatures a
+        WHERE LOWER(a.creature_name) = LOWER(:creature_name)
+        GROUP BY a.creature_id       
                ;
     """)
     stmt = text("""
