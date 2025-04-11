@@ -9,6 +9,7 @@ uvicorn
 geojson
 sqlalchemy
 PyJWT
+requests
 
 pydantic
 pydantic[email]
@@ -27,3 +28,5 @@ asyncpg
 # CORS middleware
 starlette
 
+# AWS
+boto3
