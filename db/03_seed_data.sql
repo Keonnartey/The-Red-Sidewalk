@@ -11,8 +11,8 @@ INSERT INTO profile.security (user_id, email, password_hash, failed_attempts, la
 INSERT INTO agg.creatures (creature_id, creature_name) VALUES
 (1, 'Ghost'),
 (2, 'Bigfoot'),
-(3, 'Alien'),
-(4, 'Dragon'),
+(3, 'Dragon'),
+(4, 'Alien'),
 (5, 'Vampire');
 
 
