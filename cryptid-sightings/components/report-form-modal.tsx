@@ -75,6 +75,7 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
     description: "",
     location_name: "",
     height_inch: "",
+    weight_lb: "",
     sighting_date: "",
     latitude: "",
     longitude: "",
@@ -147,6 +148,7 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
         location_name: formData.location_name,
         description_short: formData.description,
         height_inch: Number(formData.height_inch),
+        weight_lb: Number(formData.weight_lb),
         sighting_date: formData.sighting_date,
         latitude: Number(formData.latitude),
         longitude: Number(formData.longitude),
@@ -286,11 +288,11 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">Date</label>
+              <label className="block text-sm font-medium">Weight (lbs)</label>
               <input
-                type="date"
-                name="sighting_date"
-                value={formData.sighting_date}
+                type="number"
+                name="weight_lb"
+                value={formData.weight_lb}
                 onChange={handleChange}
                 required
                 className="w-full border rounded p-2"
@@ -298,30 +300,18 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Latitude</label>
-              <input
-                type="number"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-                required
-                className="w-full border rounded p-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Longitude</label>
-              <input
-                type="number"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-                required
-                className="w-full border rounded p-2"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium">Date</label>
+            <input
+              type="date"
+              name="sighting_date"
+              value={formData.sighting_date}
+              onChange={handleChange}
+              required
+              className="w-full border rounded p-2"
+            />
           </div>
+
 
           <div>
             <label className="block text-sm font-medium">Upload Photos</label>

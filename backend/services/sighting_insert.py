@@ -11,6 +11,7 @@ def insert_sighting(db: Session, body: Dict[str, Any]):
             location_name,
             description_short,
             height_inch,
+            weight_lb,
             sighting_date,
             geom
         )
@@ -20,6 +21,7 @@ def insert_sighting(db: Session, body: Dict[str, Any]):
             :location_name,
             :description_short,
             :height_inch,
+            :weight_lb,
             :sighting_date,
             ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)
         )
@@ -32,6 +34,7 @@ def insert_sighting(db: Session, body: Dict[str, Any]):
         "location_name": body["location_name"],
         "description_short": body["description_short"],
         "height_inch": body["height_inch"],
+        "weight_lb": body["weight_lb"],
         "sighting_date": body["sighting_date"],
         "latitude": body["latitude"],
         "longitude": body["longitude"]

@@ -12,7 +12,7 @@ BUCKET_NAME = os.environ.get("S3_BUCKET_NAME")
 def fetch_preview_info(db: Session, sighting_id: int) -> dict | None:
     stmt = text("""
         SELECT sighting_id, user_id, creature_id, location_name, description_short,
-               height_inch, sighting_date,
+               height_inch, weight_lb, sighting_date,
                ST_X(geom) AS longitude, ST_Y(geom) AS latitude
         FROM info.sightings_preview
         WHERE sighting_id = :sighting_id

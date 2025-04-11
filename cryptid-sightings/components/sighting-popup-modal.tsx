@@ -12,6 +12,7 @@ interface SightingPopupModalProps {
       location_name: string;
       description_short: string;
       height_inch: number;
+      weight_lb: number;
       sighting_date: string;
       latitude: number;
       longitude: number;
@@ -55,6 +56,7 @@ const SightingPopupModal: React.FC<SightingPopupModalProps> = ({ data, onClose }
           <p className="text-sm text-gray-600">Location: <span className="font-semibold">{preview.location_name}</span></p>
           <p className="text-sm text-gray-600">Date: <span className="font-semibold">{preview.sighting_date}</span></p>
           <p className="text-sm text-gray-600">Height: <span className="font-semibold">{preview.height_inch} inches</span></p>
+          <p className="text-sm text-gray-600">Weight: <span className="font-semibold">{preview.weight_lb} lbs</span></p>
           <p className="text-sm text-gray-600">Coordinates: <span className="font-semibold">({preview.latitude}, {preview.longitude})</span></p>
         </div>
 

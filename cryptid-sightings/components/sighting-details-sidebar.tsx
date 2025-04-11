@@ -14,6 +14,7 @@ interface SightingDetailsSidebarProps {
     description: string;
     location_name: string;
     height_inch: number;
+    weight_lb: number;
     sighting_date: string;
     latitude: number;
     longitude: number;
@@ -49,6 +50,9 @@ const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({ sightin
 
         <div>Height</div>
         <div className="font-bold text-right">{sighting.height_inch} inches</div>
+
+        <div>Weight</div>
+        <div className="font-bold text-right">{sighting.weight_lb} lbs</div>
 
         <div>Location</div>
         <div className="font-bold text-right">{sighting.location_name}</div>

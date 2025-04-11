@@ -35,6 +35,7 @@ def get_filtered_sightings(db: Session, creature_id: int):
                 location_name,
                 description_short,
                 height_inch,
+                weight_lb,
                 sighting_date,
                 created_at,
                 ST_X(geom) AS longitude,
@@ -62,6 +63,7 @@ def get_filtered_sightings(db: Session, creature_id: int):
                     "location_name": row.location_name,
                     "description": row.description_short,
                     "height_inch": row.height_inch,
+                    "weight_lb": row.weight_lb,
                     "sighting_date": row.sighting_date.isoformat() if row.sighting_date else None,
                     "created_at": row.created_at.isoformat() if row.created_at else None
                 }
