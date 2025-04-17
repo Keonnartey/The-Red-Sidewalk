@@ -69,16 +69,15 @@ CREATE TABLE IF NOT EXISTS social.interactions (
 -- Ratings Table
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS social.ratings (
-    rating_id INT PRIMARY KEY,
+    rating_id SERIAL PRIMARY KEY,
     sighting_id INT NOT NULL,
     user_id INT NOT NULL,
     rating INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (sighting_id, user_id),
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
-
-
 
 ------------------------------------------------------------
 -- Sightings_Full Table 
