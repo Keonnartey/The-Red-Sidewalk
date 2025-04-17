@@ -21,6 +21,15 @@ def fetch_preview_info(db: Session, sighting_id: int) -> dict | None:
     
     return dict(result._mapping) if result else None
 
+def fetch_average_rating(db: Session, sighting_id: int) -> dict:
+    stmt = text("""
+        SELECT avg_rating, rating_count
+        FROM agg.sightings_ratings
+        WHERE sighting_id = :sighting_id
+    """)
+    result = db.execute(stmt, {"sighting_id": sighting_id}).fetchone()
+    return dict(result._mapping) if result else {"avg_rating": 0, "rating_count": 0}
+
 
 def fetch_image_keys(db: Session, sighting_id: int) -> list[str]:
     stmt = text("""
@@ -48,6 +57,10 @@ def get_sighting_detail(db: Session, sighting_id: int) -> dict | None:
     preview_data = fetch_preview_info(db, sighting_id)
     if preview_data is None:
         return None
+
+    # 👇 Add this
+    rating_info = fetch_average_rating(db, sighting_id)
+    preview_data.update(rating_info)
 
     s3_keys = fetch_image_keys(db, sighting_id)
     signed_urls = generate_presigned_urls(s3_keys)
