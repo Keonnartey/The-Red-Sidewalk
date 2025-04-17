@@ -7,4 +7,5 @@ router = APIRouter()
 
 @router.get("/{creature_name}")
 def get_all_sightings(creature_name: str, db: Session = Depends(get_db)):
-    return creature_info.get_avgs(db, creature_name)
+    data = creature_info.get_avgs(db, creature_name)
+    return data

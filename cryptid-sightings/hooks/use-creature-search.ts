@@ -5,7 +5,7 @@ import { creatures } from "@/components/lore/creatures"
 
 interface CreatureData {
   height: string
-  weight?: string
+  weight: string
   locations?: string
   lore?: string
 }
@@ -56,12 +56,14 @@ export function useCreatureSearch() {
         const data = await response.json()
         setCreatureData({
           height: data.height || "Unknown",
+          weight: data.weight || "Unknown",
           // You can add more fields here as needed
         })
       } catch (error) {
         console.error("Error fetching creature data:", error)
         setCreatureData({
           height: "Unknown",
+          weight: "Unknown",
         })
       }
     }
@@ -92,4 +94,3 @@ export function useCreatureSearch() {
     setSelectedCreature,
   }
 }
-

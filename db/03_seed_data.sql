@@ -258,16 +258,16 @@ INSERT INTO profile.users (
 (5, 'Chris Lee', '654 Kraken Bay, FL', 'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
 
 -- Dummy data for rankings.most_popular_sightings
-INSERT INTO rankings.most_popular_sightings (
-    creature_id,
-    rank,
-    sighting_id
-) VALUES
-(1, 1, 1),
-(2, 1, 2),
-(3, 1, 3),
-(4, 1, 4),
-(5, 1, 5);
+--INSERT INTO rankings.most_popular_sightings (
+--    creature_id,
+--    rank,
+--    sighting_id
+--) VALUES
+--(1, 1, 1),
+--(2, 1, 2),
+--(3, 1, 3),
+--(4, 1, 4),
+--(5, 1, 5);
 
 -- Dummy data for rankings.most_popular_comments
 INSERT INTO rankings.most_popular_comments (
@@ -282,25 +282,25 @@ INSERT INTO rankings.most_popular_comments (
 (5, 1, 6);
 
 -- Dummy data for agg.sightings_ratings
-INSERT INTO agg.sightings_ratings (
-    sighting_id,
-    avg_rating,
-    rating_count
-) VALUES
-(1, 4.2, 6),
-(2, 3.5, 6),
-(3, 2.0, 6),
-(4, 4.4, 6),
-(5, 4.6, 6);
+--INSERT INTO agg.sightings_ratings (
+--    sighting_id,
+--    avg_rating,
+--    rating_count
+--) VALUES
+--(1, 4.2, 6),
+--(2, 3.5, 6),
+--(3, 2.0, 6),
+--(4, 4.4, 6),
+--(5, 4.6, 6);
 
 -- Dummy data for agg.click_data
-INSERT INTO agg.click_data (
-    sighting_id,
-    total_clicks,
-    total_comments
-) VALUES
-(1, 50, 3),
-(2, 30, 2),
-(3, 20, 1),
-(4, 45, 4),
-(5, 60, 5);
+--INSERT INTO agg.click_data (
+--    sighting_id,
+--    total_clicks,
+--    total_comments
+--) VALUES
+--(1, 50, 3),
+--(2, 30, 2),
+--(3, 20, 1),
+--(4, 45, 4),
+--(5, 60, 5);

@@ -183,6 +183,7 @@ CREATE TABLE IF NOT EXISTS rankings.most_popular_sightings (
     rank INT DEFAULT 0,
     sighting_id INT NOT NULL,
     PRIMARY KEY (creature_id, sighting_id),  -- Composite Primary Key
+    CONSTRAINT unique_sighting_id UNIQUE (sighting_id),
     FOREIGN KEY (creature_id) REFERENCES agg.creatures(creature_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );

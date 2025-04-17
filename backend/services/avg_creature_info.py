@@ -4,7 +4,7 @@ from sqlalchemy import text
 def get_avgs(db: Session, creature_name: str):
     sql = text("""
         SELECT 
-           avg_height
+           avg_height, avg_weight
 
         FROM agg.creatures a
         WHERE LOWER(a.creature_name) = LOWER(:creature_name)
@@ -19,8 +19,9 @@ def get_avgs(db: Session, creature_name: str):
     if result:
         return {
                 "height": f"{round(result.avg_height / 12, 2)} feet" if result.avg_height else "Unknown",
+                "weight": f"{round(result.avg_weight, 2)} pounds" if result.avg_weight else "Unknown",
 
             }
-    return {"height": "Unknown"}
+    return {"height": "Unknown", "weight": "Unknown"}
 
   
