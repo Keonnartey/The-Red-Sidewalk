@@ -9,7 +9,7 @@ interface CreatureDetailsProps {
   creatureId: string | null
   creatureData: {
     height: string
-    weight?: string
+    weight: string
     locations?: string
     lore?: string
   } | null
@@ -52,7 +52,7 @@ export function CreatureDetails({ creatureId, creatureData, onClose }: CreatureD
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-2">AVERAGE WEIGHT</h3>
-                  <p className="text-xl">{staticDetails.weight || "Unknown"}</p>
+                  <p className="text-xl">{creatureData ? creatureData.weight : "Loading..."}</p>
                 </div>
               </div>
 
