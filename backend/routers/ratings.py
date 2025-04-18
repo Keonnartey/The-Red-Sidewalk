@@ -4,6 +4,8 @@ from database import get_db
 from sqlalchemy import text
 from pydantic import BaseModel
 from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -37,13 +39,16 @@ def submit_user_rating(body: RatingInput, db: Session = Depends(get_db)):
         DO UPDATE SET rating = EXCLUDED.rating, created_at = EXCLUDED.created_at
     """)
 
-    db.execute(stmt, {
-        "sighting_id": body.sighting_id,
-        "user_id": body.user_id,
-        "rating": body.rating,
-        "created_at": datetime.utcnow()
-    })
+    try:
+        db.execute(stmt, {
+            "sighting_id": body.sighting_id,
+            "user_id": body.user_id,
+            "rating": body.rating,
+            "created_at": datetime.utcnow()
+        })
+        db.commit()
+        return {"status": "success", "rating": body.rating}
 
-    db.commit()
-
-    return {"status": "success", "rating": body.rating}
+    except Exception as e:
+        logger.exception("❌ Failed to insert/update rating")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

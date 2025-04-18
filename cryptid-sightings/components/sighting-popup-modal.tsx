@@ -35,8 +35,9 @@ const SightingPopupModal: React.FC<SightingPopupModalProps> = ({ data, onClose }
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const { preview, images } = data;
-  const averageRating = preview.avg_rating ?? 0;
-  const ratingCount = preview.rating_count ?? 0;
+  const [averageRating, setAverageRating] = useState(preview.avg_rating ?? 0);
+  const [ratingCount, setRatingCount] = useState(preview.rating_count ?? 0);
+  
 
   useEffect(() => {
     setMounted(true);
@@ -63,6 +64,17 @@ const SightingPopupModal: React.FC<SightingPopupModalProps> = ({ data, onClose }
         body: JSON.stringify({ sighting_id: data.sighting_id, user_id: userId, rating }),
       });
       setUserRating(rating);
+  
+      // 🔄 Re-fetch updated sighting preview
+      const res = await fetch(`http://localhost:8000/sightings/${data.sighting_id}`);
+      const updated = await res.json();
+  
+      // Optional: only update avg/rating count, not the whole modal
+      if (updated?.preview) {
+        setAverageRating(updated.preview.avg_rating);
+        setRatingCount(updated.preview.rating_count);
+      }
+  
     } catch (err) {
       console.error("Error submitting rating", err);
     }
