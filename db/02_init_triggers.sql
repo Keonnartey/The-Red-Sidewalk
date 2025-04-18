@@ -119,7 +119,7 @@ $$ LANGUAGE plpgsql;
 -- Trigger on info.sightings_preview
 ------------------------------------------------------------
 CREATE TRIGGER trigger_update_avg_rating
-AFTER INSERT ON social.ratings
+AFTER INSERT OR UPDATE ON social.ratings
 FOR EACH ROW
 EXECUTE FUNCTION agg.update_avg_rating();
 
