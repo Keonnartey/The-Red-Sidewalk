@@ -80,6 +80,24 @@ CREATE TABLE IF NOT EXISTS social.ratings (
 );
 
 ------------------------------------------------------------
+-- Content Flags Table (Polymorphic design)
+------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS social.content_flags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_id INT NOT NULL,
+    content_type VARCHAR(255) NOT NULL,
+    flagged_by_user_id INT NOT NULL,
+    reason_code VARCHAR(255) NOT NULL,
+    custom_reason TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    reviewed_by_admin_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (flagged_by_user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (reviewed_by_admin_id) REFERENCES profile.security(user_id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+);
+
+------------------------------------------------------------
 -- Sightings_Full Table 
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS info.sightings_full (

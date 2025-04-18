@@ -298,3 +298,28 @@ INSERT INTO rankings.most_popular_comments (
 --(3, 20, 1),
 --(4, 45, 4),
 --(5, 60, 5);
+
+-- Seed data for content_flags
+INSERT INTO social.content_flags (
+    content_id,
+    content_type,
+    flagged_by_user_id,
+    reason_code,
+    custom_reason,
+    status,
+    reviewed_by_admin_id
+) VALUES
+-- Flag a sighting
+(1, 'sighting', 2, 'inappropriate', 'Looks violent', 'pending', NULL),
+
+-- Flag a comment (comment_id = 2)
+(2, 'comment', 1, 'spam', NULL, 'reviewed', 3),
+
+-- Flag another sighting
+(2, 'sighting', 3, 'misleading', 'Claim seems fake', 'reviewed', 4),
+
+-- Flag a comment (comment_id = 3)
+(3, 'comment', 4, 'offensive', 'Toxic language', 'pending', NULL),
+
+-- Flag a comment (comment_id = 4)
+(4, 'comment', 1, 'spam', NULL, 'rejected', 2);
