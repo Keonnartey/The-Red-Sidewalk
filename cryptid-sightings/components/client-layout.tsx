@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import MapWrapper from "@/components/map-wrapper";
-import Sidebar from "@/components/sidebar";
+import { SightingsProvider } from "@/hooks/useSightingsStore";
+import Sidebar from "@/components/sidebar"; // 👈 Add this back
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,30 +10,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const shouldShowMap = showMapOnRoutes.includes(pathname);
 
   return (
-    <>
-      {/* Render the background map only on selected routes */}
-      {shouldShowMap && <MapWrapper />}
-
-      {/* Title shown only when map is visible */}
-      {shouldShowMap && (
-        <div className="absolute top-6 right-6 z-[900] text-right max-w-[90vw] pointer-events-none">
-          <h1
-            className="text-white text-3xl sm:text-5xl font-bold leading-tight tracking-wide"
-            style={{ textShadow: "2px 2px 6px rgba(0,0,0,0.6)" }}
-          >
-            REAL THINGS
-            <br />
-            SIGHTINGS
-          </h1>
-        </div>
-      )}
-
-      {/* Sidebar is always visible and interactive */}
+    <SightingsProvider>
+      {/* ✅ Global Sidebar is always rendered again */}
       <div className="absolute top-0 left-0 z-20 pointer-events-auto">
         <Sidebar />
       </div>
 
-      {/* Main page content */}
+      {/* Main layout container */}
       <div
         className={`relative z-10 w-full ${
           shouldShowMap
@@ -45,6 +28,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {children}
         </main>
       </div>
-    </>
+    </SightingsProvider>
   );
 }
