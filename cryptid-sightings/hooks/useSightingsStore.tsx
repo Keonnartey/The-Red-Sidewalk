@@ -32,6 +32,10 @@ interface SightingsContextType {
   setFiltered: (value: boolean) => void;
   showReportForm: boolean;
   setShowReportForm: (v: boolean) => void;
+  launchFilterAfterRoute: boolean;
+  setLaunchFilterAfterRoute: (v: boolean) => void;
+  launchReportAfterRoute: boolean;
+  setLaunchReportAfterRoute: (v: boolean) => void;
 }
 
 const SightingsContext = createContext<SightingsContextType | undefined>(undefined);
@@ -49,6 +53,8 @@ export function SightingsProvider({ children }: { children: ReactNode }) {
   const [showFilter, setShowFilter] = useState(false);
   const [filtered, setFiltered] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
+  const [launchFilterAfterRoute, setLaunchFilterAfterRoute] = useState(false);
+  const [launchReportAfterRoute, setLaunchReportAfterRoute] = useState(false);
 
   const resetSightings = async () => {
     try {
@@ -80,7 +86,11 @@ export function SightingsProvider({ children }: { children: ReactNode }) {
     filtered,
     setFiltered,
     showReportForm,
-    setShowReportForm
+    setShowReportForm,
+    launchFilterAfterRoute,
+    setLaunchFilterAfterRoute,
+    launchReportAfterRoute,
+    setLaunchReportAfterRoute
   };
 
   return (

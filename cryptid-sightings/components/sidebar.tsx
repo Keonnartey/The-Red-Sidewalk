@@ -15,7 +15,7 @@ import { useSightings } from "@/hooks/useSightingsStore"; // ✅ context with re
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setShowFilter, resetSightings, setShowReportForm } = useSightings(); // ✅ include resetSightings
+  const { setShowFilter, resetSightings, setShowReportForm, setLaunchFilterAfterRoute, setLaunchReportAfterRoute } = useSightings(); // ✅ include resetSightings
 
   const handleMapClick = () => {
     if (pathname === "/map") {
@@ -25,13 +25,31 @@ export default function Sidebar() {
     }
   };
 
+  const handleFilterClick = () => {
+    if (pathname === "/map") {
+      setShowFilter(true);
+    } else {
+      setLaunchFilterAfterRoute(true);
+      router.push("/map");
+    }
+  };
+  
+  const handleReportClick = () => {
+    if (pathname === "/map") {
+      setShowReportForm(true);
+    } else {
+      setLaunchReportAfterRoute(true);
+      router.push("/map");
+    }
+  };
+
   return (
     <div className="w-[130px] bg-[#1e1d4a] flex flex-col items-center py-4 gap-8 shrink-0">
       <button
         onClick={() => {
           setShowFilter(false);
           setShowReportForm(false);
-          handleMapClick;
+          handleMapClick();
         }}
         className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
           pathname === "/map" ? "bg-[#dacfff]" : "bg-white"
@@ -44,7 +62,7 @@ export default function Sidebar() {
         onClick={() => {
           console.log("🔍 Opening filter modal from sidebar");
           setShowReportForm(false);
-          setShowFilter(true);
+          handleFilterClick();
         }}
         className="w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition"
       >
@@ -55,7 +73,7 @@ export default function Sidebar() {
         onClick={() => {
           console.log("🔍 Opening report modal from sidebar");
           setShowFilter(false);
-          setShowReportForm(true)
+          handleReportClick();
         }}
         className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition`}
       >

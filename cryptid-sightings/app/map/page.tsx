@@ -2,6 +2,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
 import Filter from "@/components/filter-form-modal";
 import { useSightings } from "@/hooks/useSightingsStore";
 import ReportFormModal from "@/components/report-form-modal";
@@ -17,7 +18,25 @@ export default function MapPage() {
     setShowFilter,
     filtered,
     resetSightings,
+    launchFilterAfterRoute,
+    setLaunchFilterAfterRoute,
+    launchReportAfterRoute,
+    setLaunchReportAfterRoute,
   } = useSightings();
+
+  useEffect(() => {
+
+    console.log("📡 useEffect ran:", { launchFilterAfterRoute, launchReportAfterRoute });
+
+    if (launchFilterAfterRoute) {
+      setShowFilter(true);
+      setLaunchFilterAfterRoute(false);
+    }
+    if (launchReportAfterRoute) {
+      setShowReportForm(true);
+      setLaunchReportAfterRoute(false);
+    }
+  }, [launchFilterAfterRoute, launchReportAfterRoute]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
