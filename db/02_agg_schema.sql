@@ -139,17 +139,21 @@ CREATE TABLE IF NOT EXISTS profile.social (
 ------------------------------------------------------------
 -- User Badges Table (Fixed Name + Primary Key)
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS profile.user_badges_real (
+CREATE TABLE IF NOT EXISTS profile.user_badges (
     user_id INT PRIMARY KEY,
-    bigfoot_amateur BOOLEAN DEFAULT FALSE,
-    lets_be_friends BOOLEAN DEFAULT FALSE,
-    elite_hunter BOOLEAN DEFAULT FALSE,
-    socialite BOOLEAN DEFAULT FALSE,
-    diversify BOOLEAN DEFAULT FALSE,
-    well_traveled BOOLEAN DEFAULT FALSE,
-    hallucinator BOOLEAN DEFAULT FALSE,
-    camera_ready BOOLEAN DEFAULT FALSE,
-    dragon_rider BOOLEAN DEFAULT FALSE,
+    unique_creature_count INT DEFAULT 0,
+    total_sightings_count INT DEFAULT 0,
+    bigfoot_count INT DEFAULT 0, 
+    dragon_count INT DEFAULT 0,
+    ghost_count INT DEFAULT 0,
+    alien_count INT DEFAULT 0,
+    vampire_count INT DEFAULT 0,
+    total_friends_count INT DEFAULT 0,
+    comments_count INT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    pictures_count INT DEFAULT 0,
+    locations_count INT DEFAULT 0,
+    user_avg_rating FLOAT DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -232,5 +236,6 @@ CREATE TABLE IF NOT EXISTS agg.click_data (
     total_comments INT DEFAULT 0,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
+
 
 COMMIT;
