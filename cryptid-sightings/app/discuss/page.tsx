@@ -130,6 +130,36 @@ export default function DiscussPage() {
   }
 
   // -------------------------------------------
+  // Add Flag
+  // -------------------------------------------
+
+  async function handleFlagContent(postId: number, reason: string, customReason: string) {
+    const payload = {
+      content_id: postId,
+      content_type: "post",
+      user_id: 1, // Replace with the actual user ID dynamically if you have auth
+      reason,
+      custom_reason: customReason,
+    }
+
+    try {
+      const res = await fetch("http://localhost:8000/content_flags/flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        alert("✅ Post reported successfully!")
+      } else {
+        alert("❌ Failed to report post.")
+      }
+    } catch (err) {
+      console.error("Error reporting post:", err)
+    }
+  }
+
+  // -------------------------------------------
   // Render
   // -------------------------------------------
   return (
@@ -172,6 +202,7 @@ export default function DiscussPage() {
                 onUpvote={handleUpvotePost}
                 onDownvote={handleDownvotePost}
                 onAddComment={(postId, commentText) => handleAddComment(postId, commentText)}
+                onFlagContent={handleFlagContent}
               />
             ))}
           </div>

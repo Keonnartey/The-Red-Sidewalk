@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ThumbsDown, ThumbsUp, Send } from "lucide-react"
+import { ThumbsDown, ThumbsUp, Send, Flag } from "lucide-react"
 import { BigfootIcon, GhostIcon, DragonIcon, AlienIcon } from "@/components/creature-icons"
+import FlagModal from "@/components/flag-modal"
 
 interface Comment {
   comment_id: number
@@ -49,10 +50,12 @@ interface PostCardProps {
   onUpvote: (postId: number) => void
   onDownvote: (postId: number) => void
   onAddComment: (postId: number, commentText: string) => void
+  onFlagContent: (postId: number, reasonCode: string, customReason: string) => void
 }
 
-export default function PostCard({ post, onUpvote, onDownvote, onAddComment }: PostCardProps) {
+export default function PostCard({ post, onUpvote, onDownvote, onAddComment, onFlagContent }: PostCardProps) {
   const [commentText, setCommentText] = useState("")
+  const [showFlagModal, setShowFlagModal] = useState(false)
 
   async function handleAddComment() {
     if (!commentText.trim()) return
@@ -64,6 +67,11 @@ export default function PostCard({ post, onUpvote, onDownvote, onAddComment }: P
     } catch (error) {
       console.error("Failed to post comment", error)
     }
+  }
+
+  function handleFlagSubmit(reasonCode: string, customReason: string) {
+    onFlagContent(post.post_id, reasonCode, customReason)
+    setShowFlagModal(false)
   }
 
   return (
@@ -81,8 +89,8 @@ export default function PostCard({ post, onUpvote, onDownvote, onAddComment }: P
       {/* Post content */}
       <div className="p-4 text-sm">{post.content}</div>
 
-      {/* Vote buttons */}
-      <div className="px-4 mb-2 flex gap-2">
+      {/* Vote + Flag buttons */}
+      <div className="px-4 mb-2 flex gap-2 items-center">
         <Button variant="outline" onClick={() => onUpvote(post.post_id)}>
           <ThumbsUp className="w-4 h-4 mr-1" />
           {post.upvotes ?? 0}
@@ -91,7 +99,23 @@ export default function PostCard({ post, onUpvote, onDownvote, onAddComment }: P
           <ThumbsDown className="w-4 h-4 mr-1" />
           {post.downvotes ?? 0}
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 underline ml-auto"
+          onClick={() => setShowFlagModal(true)}
+        >
+          <Flag className="w-4 h-4" />
+        </Button>
       </div>
+
+      {/* Flag Modal (shared with sightings) */}
+      <FlagModal
+        title="Flag Post"
+        open={showFlagModal}
+        onClose={() => setShowFlagModal(false)}
+        onSubmit={handleFlagSubmit}
+      />
 
       {/* Comments */}
       <div className="p-4 bg-white text-sm flex flex-col gap-2">
