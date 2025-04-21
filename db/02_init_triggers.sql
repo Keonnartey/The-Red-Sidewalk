@@ -116,7 +116,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 ------------------------------------------------------------
--- Trigger on info.sightings_preview
+-- Trigger on social.ratings
 ------------------------------------------------------------
 CREATE TRIGGER trigger_update_avg_rating
 AFTER INSERT OR UPDATE ON social.ratings
@@ -266,3 +266,80 @@ FOR EACH ROW
 EXECUTE FUNCTION trigger_update_rankings_on_upvote();
 
 
+------------------------------------------------------
+-- User profile aggs
+------------------------------------------------------
+CREATE OR REPLACE FUNCTION profile.update_user_stats(user_id_input INT)
+RETURNS void AS $$
+BEGIN
+    -- Update counts based on live data
+    UPDATE profile.user_stats
+    SET 
+        unique_creature_count = (
+            SELECT COUNT(DISTINCT sp.creature_id)
+            FROM info.sightings_preview sp
+            WHERE sp.user_id = user_id_input
+        ),
+        total_sightings_count = (
+            SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            WHERE sp.user_id = user_id_input
+        ),
+        bigfoot_count = (
+            SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Bigfoot'
+        ),
+        -- repeat for other creature types...
+        dragon_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Dragon'),
+        ghost_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Ghost'),
+        alien_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Alien'),
+        vampire_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Vampire'),
+        total_friends = (
+            SELECT COUNT(*) 
+            FROM profile.social f
+            WHERE f.user_id = user_id_input 
+        ),
+        comment_count = (
+            SELECT COUNT(*) 
+            FROM social.interactions
+            WHERE user_id = user_id_input
+        ),
+        like_count = (
+            SELECT SUM(upvote_count)
+            FROM info.sightings_full
+            WHERE user_id = user_id_input
+            GROUP BY user_id
+        ),
+        pictures_count = (
+            SELECT COUNT(*) 
+            FROM info.sightings_full sf
+            JOIN info.sightings_preview sp ON sp.sighting_id = sf.sighting_id
+            WHERE sp.user_id = user_id_input AND sf.image IS NOT NULL
+        ),
+        locations_count = (
+            SELECT COUNT(DISTINCT location_id)
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+        ),
+        user_avg_rating = (
+            SELECT AVG(rating)
+            FROM social.ratings
+            WHERE user_id = user_id_input
+        )
+    WHERE user_id = user_id_input;
+END;
+$$ LANGUAGE plpgsql;
