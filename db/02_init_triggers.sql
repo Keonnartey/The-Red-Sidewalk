@@ -343,3 +343,74 @@ BEGIN
     WHERE user_id = user_id_input;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- TRIGGERS
+-- Trigger on new or updated sightings
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_sighting()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_sighting
+AFTER INSERT OR UPDATE ON info.sightings_preview
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_sighting();
+
+-- Trigger on new comments
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_comment()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_comment
+AFTER INSERT ON social.interactions
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_comment();
+
+-- Trigger on new ratings
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_rating
+AFTER INSERT OR UPDATE ON social.ratings
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_rating();
+
+-- Trigger on picture uploaded to sightings_full
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_picture()
+RETURNS TRIGGER AS $$
+DECLARE
+    uid INT;
+BEGIN
+    SELECT user_id INTO uid FROM info.sightings_preview WHERE sighting_id = NEW.sighting_id;
+    PERFORM profile.update_user_stats(uid);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_picture
+AFTER INSERT OR UPDATE OF image ON info.sightings_full
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_picture();
+
+-- Trigger on new friend connection
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_friend()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    PERFORM profile.update_user_stats(NEW.friend_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_friend
+AFTER INSERT ON social.friends
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_friend();
