@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS info.sightings_preview (
     location_name VARCHAR(255),
     description_short VARCHAR(255) NOT NULL,
     height_inch INT NOT NULL,
+    weight_lb INT NOT NULL,
     sighting_date DATE NOT NULL,
     geom geometry(Point, 4326) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -59,8 +60,6 @@ CREATE TABLE IF NOT EXISTS social.interactions (
     sighting_id INT NOT NULL,
     user_id INT NOT NULL,
     comment TEXT,
-    upvote_count INT DEFAULT 0,
-    downvote_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
@@ -70,26 +69,47 @@ CREATE TABLE IF NOT EXISTS social.interactions (
 -- Ratings Table
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS social.ratings (
-    rating_id INT PRIMARY KEY,
+    rating_id SERIAL PRIMARY KEY,
     sighting_id INT NOT NULL,
     user_id INT NOT NULL,
     rating INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (sighting_id, user_id),
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
-
+------------------------------------------------------------
+-- Content Flags Table (Polymorphic design)
+------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS social.content_flags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_id INT NOT NULL,
+    content_type VARCHAR(255) NOT NULL,
+    flagged_by_user_id INT NOT NULL,
+    reason_code VARCHAR(255) NOT NULL,
+    custom_reason TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    reviewed_by_admin_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (flagged_by_user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (reviewed_by_admin_id) REFERENCES profile.security(user_id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+);
 
 ------------------------------------------------------------
 -- Sightings_Full Table 
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS info.sightings_full (
     sighting_id INT PRIMARY KEY,
-    description_full TEXT NOT NULL,
-    season VARCHAR(255) NOT NULL,
-    weather VARCHAR(255) NOT NULL,
-    FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+    user_id INT NOT NULL,
+    --description_full TEXT NOT NULL,
+    --season VARCHAR(255) NOT NULL,
+    --weather VARCHAR(255) NOT NULL,
+    upvote_count INT DEFAULT 0,
+    downvote_count INT DEFAULT 0,
+    FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
 ------------------------------------------------------------
@@ -176,6 +196,7 @@ CREATE TABLE IF NOT EXISTS rankings.most_popular_sightings (
     rank INT DEFAULT 0,
     sighting_id INT NOT NULL,
     PRIMARY KEY (creature_id, sighting_id),  -- Composite Primary Key
+    CONSTRAINT unique_sighting_id UNIQUE (sighting_id),
     FOREIGN KEY (creature_id) REFERENCES agg.creatures(creature_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
@@ -211,6 +232,5 @@ CREATE TABLE IF NOT EXISTS agg.click_data (
     total_comments INT DEFAULT 0,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
-
 
 COMMIT;
