@@ -28,7 +28,7 @@ def get_all_sightings(db: Session):
     2: "bigfoot",
     3: "dragon",
     4: "alien",
-    5: "sun"
+    5: "vampire"
     }
 
     for row in rows:
