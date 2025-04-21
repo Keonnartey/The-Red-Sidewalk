@@ -12,6 +12,7 @@ creature_types = {
     2: "bigfoot",
     3: "dragon",
     4: "alien",
+    5: "vampire",
 }
 
 # Create an inverted mapping for filtering: creature name -> creature_id

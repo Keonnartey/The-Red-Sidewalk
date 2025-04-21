@@ -13,6 +13,7 @@ creature_types = {
     2: "bigfoot",
     3: "dragon",
     4: "alien",
+    5: "vampire",
 }
 
 def get_filtered_sightings(db: Session, creature_id: int):
