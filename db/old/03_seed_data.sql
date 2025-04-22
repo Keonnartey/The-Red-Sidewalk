@@ -211,27 +211,27 @@ INSERT INTO profile.user_badges_real (
 
 
 -- Dummy data for profile.user_stats
-INSERT INTO profile.user_stats (
-    user_id,
-    unique_creature_count,
-    total_sightings_count,
-    bigfoot_count,
-    dragon_count,
-    ghost_count,
-    alien_count,
-    vampire_count,
-    total_friends,
-    comments_count,
-    like_count,
-    pictures_count,
-    locations_count,
-    user_avg_rating
-) VALUES
-(1, 3, 10, 2, 1, 0, 0, 0, 2, 4, 10, 3, 5, 4.5),
-(2, 2, 7, 1, 0, 1, 0, 0, 2, 3, 8, 2, 4, 3.7),
-(3, 4, 11, 3, 0, 0, 1, 0, 3, 5, 11, 4, 6, 4.3),
-(4, 1, 6, 0, 0, 0, 1, 0, 1, 2, 4, 1, 3, 3.6),
-(5, 5, 14, 4, 2, 1, 1, 1, 1, 6, 13, 5, 7, 4.8);
+--INSERT INTO profile.user_stats (
+ --   user_id,
+  --  unique_creature_count,
+  --  total_sightings_count,
+   -- bigfoot_count,
+  --  dragon_count,
+   -- ghost_count,
+  --  alien_count,
+  --  vampire_count,
+  --  total_friends,
+  --  comments_count,
+  --  like_count,
+  --  pictures_count,
+  --  locations_count,
+  --  user_avg_rating
+--) VALUES
+--(1, 3, 10, 2, 1, 0, 0, 0, 2, 4, 10, 3, 5, 4.5),
+--(2, 2, 7, 1, 0, 1, 0, 0, 2, 3, 8, 2, 4, 3.7),
+--(3, 4, 11, 3, 0, 0, 1, 0, 3, 5, 11, 4, 6, 4.3),
+--(4, 1, 6, 0, 0, 0, 1, 0, 1, 2, 4, 1, 3, 3.6),
+--(5, 5, 14, 4, 2, 1, 1, 1, 1, 6, 13, 5, 7, 4.8);
 
 -- Dummy data for profile.users
 INSERT INTO profile.users (

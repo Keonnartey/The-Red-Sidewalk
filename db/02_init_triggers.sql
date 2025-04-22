@@ -273,6 +273,9 @@ CREATE OR REPLACE FUNCTION profile.update_user_stats(user_id_input INT)
 RETURNS void AS $$
 BEGIN
     -- Update counts based on live data
+    INSERT INTO profile.user_stats (user_id)
+    VALUES (user_id_input)
+    ON CONFLICT (user_id) DO NOTHING;
     UPDATE profile.user_stats
     SET 
         unique_creature_count = (
@@ -313,7 +316,7 @@ BEGIN
             FROM profile.social f
             WHERE f.user_id = user_id_input 
         ),
-        comment_count = (
+        comments_count = (
             SELECT COUNT(*) 
             FROM social.interactions
             WHERE user_id = user_id_input
@@ -326,12 +329,12 @@ BEGIN
         ),
         pictures_count = (
             SELECT COUNT(*) 
-            FROM info.sightings_full sf
+            FROM info.sightings_imgs sf
             JOIN info.sightings_preview sp ON sp.sighting_id = sf.sighting_id
-            WHERE sp.user_id = user_id_input AND sf.image IS NOT NULL
+            WHERE sp.user_id = user_id_input
         ),
         locations_count = (
-            SELECT COUNT(DISTINCT location_id)
+            SELECT COUNT(DISTINCT location_name)
             FROM info.sightings_preview
             WHERE user_id = user_id_input
         ),
@@ -398,7 +401,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_stats_on_picture
-AFTER INSERT OR UPDATE OF image ON info.sightings_full
+AFTER INSERT OR UPDATE OF img_id ON info.sightings_imgs
 FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_picture();
 
 -- Trigger on new friend connection
@@ -412,5 +415,5 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_stats_on_friend
-AFTER INSERT ON social.friends
+AFTER INSERT ON profile.social
 FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_friend();
