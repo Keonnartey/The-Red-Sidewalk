@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
+'use client';
 
-const LoginPage = ({ onLoginSuccess }) => {
-  const [formData, setFormData] = useState({
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../components/auth-provider';
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+interface LoginStatus {
+  type: string;
+  message: string;
+}
+
+interface AuthData {
+  access_token: string;
+  token_type: string;
+}
+
+interface LoginPageProps {
+  onLoginSuccess?: (data: AuthData) => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+  const router = useRouter();
+  const { continueAsGuest } = useAuth();
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginStatus, setLoginStatus] = useState(null);
+  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
 
   const API_BASE_URL = 'http://localhost:8000';
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -19,16 +45,16 @@ const LoginPage = ({ onLoginSuccess }) => {
     });
     
     // Clear errors when user starts typing
-    if (errors[name]) {
+    if (errors[name as keyof LoginFormData]) {
       setErrors({
         ...errors,
-        [name]: null
+        [name]: undefined
       });
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): boolean => {
+    const newErrors: Partial<LoginFormData> = {};
     
     // Email validation
     if (!formData.email) {
@@ -48,7 +74,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
@@ -76,9 +102,9 @@ const LoginPage = ({ onLoginSuccess }) => {
         
         const data = await response.json();
         
-        // Store the token for future authenticated requests
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('token_type', data.token_type);
+        // Store the token for future authenticated requests - using sessionStorage
+        sessionStorage.setItem('token', data.access_token);
+        sessionStorage.setItem('token_type', data.token_type);
         
         // Get user information
         const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
@@ -90,23 +116,34 @@ const LoginPage = ({ onLoginSuccess }) => {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           // Store user data if needed
-          localStorage.setItem('user', JSON.stringify(userData));
+          sessionStorage.setItem('user', JSON.stringify(userData));
         }
         
         setLoginStatus({ type: 'success', message: 'Login successful! Redirecting...' });
         
         // Call the success callback after a slight delay to show the success message
         setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess(data);
-          }
+          // Use window.location for a hard redirect that ensures the page refreshes
+          window.location.href = '/map';
         }, 1500);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Login error:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Login failed. Please try again.';
+        
+        if (error.message.includes('Incorrect email or password')) {
+          errorMessage = 'Incorrect email or password. Please try again.';
+        } else if (error.message.includes('Could not validate credentials')) {
+          errorMessage = 'Authentication failed. Please try again.';
+        } else if (error.message.includes('connection')) {
+          errorMessage = 'Connection to server failed. Please check your internet connection.';
+        }
+        
         setLoginStatus({ 
           type: 'error', 
-          message: error.message || 'Login failed. Please try again.' 
+          message: errorMessage 
         });
       } finally {
         setIsSubmitting(false);
@@ -114,10 +151,14 @@ const LoginPage = ({ onLoginSuccess }) => {
     }
   };
 
+  const handleGuestAccess = () => {
+    continueAsGuest();
+  };
+
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Welcome Back</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Welcome to Real Things Sightings</h1>
         <p className="text-gray-600">Sign in to continue to your account</p>
       </div>
       
@@ -192,12 +233,22 @@ const LoginPage = ({ onLoginSuccess }) => {
         </button>
       </form>
       
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600 mb-2">or</p>
+        <button
+          onClick={handleGuestAccess}
+          className="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Continue as Guest
+        </button>
+      </div>
+      
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
           Don't have an account?{' '}
-          <a href="/register" className="font-medium text-blue-600 hover:underline">
+          <Link href="/register" className="font-medium text-blue-600 hover:underline">
             Sign up
-          </a>
+          </Link>
         </p>
       </div>
     </div>
