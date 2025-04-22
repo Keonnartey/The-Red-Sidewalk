@@ -194,7 +194,8 @@ BEGIN
             COALESCE(cd.total_comments, 0) * 1.5 +
             COALESCE(cd.total_clicks, 0) * 2 +
             COALESCE(sr.avg_rating, 0) * 3 +
-            COALESCE(sf.upvote_count, 0) * 1 AS score
+            COALESCE(sf.upvote_count, 0) * 1 -
+            COALESCE(sf.downvote_count, 0) * 1 AS score
         FROM info.sightings_preview sp
         LEFT JOIN agg.click_data cd ON cd.sighting_id = sp.sighting_id
         LEFT JOIN agg.sightings_ratings sr ON sr.sighting_id = sp.sighting_id

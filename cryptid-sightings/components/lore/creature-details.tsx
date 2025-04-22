@@ -12,6 +12,12 @@ interface CreatureDetailsProps {
     weight: string
     locations?: string
     lore?: string
+    popularSightings?: Array<{
+      id: string
+      description: string
+      location: string
+      date: string
+    }>
   } | null
   onClose: () => void
 }
@@ -21,6 +27,9 @@ export function CreatureDetails({ creatureId, creatureData, onClose }: CreatureD
 
   // Fallback to static data if API data is not available
   const staticDetails = getCreatureDetails(creatureId)
+
+  // Debug
+  console.log("CreatureData:", creatureData)
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
@@ -58,7 +67,11 @@ export function CreatureDetails({ creatureId, creatureData, onClose }: CreatureD
 
               <div className="mb-6">
                 <h3 className="text-lg font-bold mb-2">LOCATIONS FOUND:</h3>
-                <p className="text-xl">{staticDetails.locations || "Unknown"}</p>
+                <p className="text-xl">
+                  {creatureData && creatureData.locations !== "Unknown"
+                    ? creatureData.locations
+                    : staticDetails.locations || "Unknown"}
+                </p>
               </div>
             </div>
           </div>
@@ -69,9 +82,27 @@ export function CreatureDetails({ creatureId, creatureData, onClose }: CreatureD
               <p>{staticDetails.lore || "No information available."}</p>
             </div>
           </div>
+
+          <div className="mb-6">
+            <h3 className="text-xl font-bold mb-4">POPULAR SIGHTINGS</h3>
+            {creatureData?.popularSightings && creatureData.popularSightings.length > 0 ? (
+              <div className="grid gap-4">
+                {creatureData.popularSightings.map((sighting) => (
+                  <div key={sighting.id} className="bg-gray-100 p-4 rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-bold">{sighting.location}</h4>
+                      <span className="text-sm text-gray-500">{sighting.date}</span>
+                    </div>
+                    <p className="text-sm">{sighting.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No popular sightings recorded.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
-
