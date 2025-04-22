@@ -74,82 +74,45 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const { login } = useAuth(); // Make sure you're getting this from useAuth
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (validateForm()) {
+    setIsSubmitting(true);
+    setLoginStatus(null);
     
-    if (validateForm()) {
-      setIsSubmitting(true);
-      setLoginStatus(null);
+    try {
+      // Use the auth context's login function instead of duplicating the logic
+      await login(formData.email, formData.password);
       
-      try {
-        // Create form data for the API request (FastAPI expects form data)
-        const formDataObj = new FormData();
-        formDataObj.append('username', formData.email); // FastAPI OAuth2 uses 'username' field
-        formDataObj.append('password', formData.password);
-        
-        // Call the actual API endpoint
-        console.log("Attempting login for:", formData.email);
-        
-        const response = await fetch(`${API_BASE_URL}/api/users/token`, {
-          method: 'POST',
-          body: formDataObj
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Login failed');
-        }
-        
-        const data = await response.json();
-        
-        // Store the token for future authenticated requests - using sessionStorage
-        sessionStorage.setItem('token', data.access_token);
-        sessionStorage.setItem('token_type', data.token_type);
-        
-        // Get user information
-        const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
-          headers: {
-            'Authorization': `${data.token_type} ${data.access_token}`
-          }
-        });
-        
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          // Store user data if needed
-          sessionStorage.setItem('user', JSON.stringify(userData));
-        }
-        
-        setLoginStatus({ type: 'success', message: 'Login successful! Redirecting...' });
-        
-        // Call the success callback after a slight delay to show the success message
-        setTimeout(() => {
-          // Use window.location for a hard redirect that ensures the page refreshes
-          window.location.href = '/map';
-        }, 1500);
-        
-      } catch (error: any) {
-        console.error('Login error:', error);
-        
-        // Provide more specific error messages
-        let errorMessage = 'Login failed. Please try again.';
-        
-        if (error.message.includes('Incorrect email or password')) {
-          errorMessage = 'Incorrect email or password. Please try again.';
-        } else if (error.message.includes('Could not validate credentials')) {
-          errorMessage = 'Authentication failed. Please try again.';
-        } else if (error.message.includes('connection')) {
-          errorMessage = 'Connection to server failed. Please check your internet connection.';
-        }
-        
-        setLoginStatus({ 
-          type: 'error', 
-          message: errorMessage 
-        });
-      } finally {
-        setIsSubmitting(false);
+      setLoginStatus({ type: 'success', message: 'Login successful! Redirecting...' });
+      
+      // No need to handle redirection here - the auth provider will do it
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error.message.includes('Incorrect email or password')) {
+        errorMessage = 'Incorrect email or password. Please try again.';
+      } else if (error.message.includes('Could not validate credentials')) {
+        errorMessage = 'Authentication failed. Please try again.';
+      } else if (error.message.includes('connection')) {
+        errorMessage = 'Connection to server failed. Please check your internet connection.';
       }
+      
+      setLoginStatus({ 
+        type: 'error', 
+        message: errorMessage 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
+};
 
   const handleGuestAccess = () => {
     continueAsGuest();

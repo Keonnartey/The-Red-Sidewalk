@@ -64,9 +64,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     console.log("Auth initialization started");
     let isMounted = true; // For handling async operations during unmount
     
+
     const initAuth = async () => {
       try {
         // Check for guest mode first
+        console.log("Session storage contents:", {
+        token: sessionStorage.getItem('token'),
+        tokenType: sessionStorage.getItem('token_type'),
+        user: sessionStorage.getItem('user'),
+        guestMode: sessionStorage.getItem('guestMode')
+      });
         const guestMode = sessionStorage.getItem('guestMode');
         if (guestMode === 'true') {
           console.log("Guest mode active");
@@ -192,62 +199,63 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isGuest, isLoading, pathname, router, isPublicRoute, isGuestAllowedRoute]);
 
   // Login function
-  const login = async (email: string, password: string): Promise<void> => {
-    setIsLoading(true);
+  // In auth-provider.tsx, modify the login function:
+const login = async (email: string, password: string): Promise<void> => {
+  setIsLoading(true);
+  
+  try {
+    const API_BASE_URL = 'http://localhost:8000';
     
-    try {
-      const API_BASE_URL = 'http://localhost:8000';
-      
-      // Create form data for the API request
-      const formData = new FormData();
-      formData.append('username', email); // FastAPI OAuth2 uses 'username' field
-      formData.append('password', password);
-      
-      console.log("Attempting login for:", email);
-      
-      const response = await fetch(`${API_BASE_URL}/api/users/token`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
-      }
-      
-      const data = await response.json();
-      
-      // Store the token for future authenticated requests
-      sessionStorage.setItem('token', data.access_token);
-      sessionStorage.setItem('token_type', data.token_type);
-      
-      // Clear guest mode if it was set
-      sessionStorage.removeItem('guestMode');
-      setIsGuest(false);
-      
-      // Get user information
-      const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
-        headers: {
-          'Authorization': `${data.token_type} ${data.access_token}`
-        }
-      });
-      
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        sessionStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Note: We don't redirect here - we let the component handle the redirection
-        // This gives time for success messages to be displayed
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    // Create form data for the API request
+    const formData = new FormData();
+    formData.append('username', email); // FastAPI OAuth2 uses 'username' field
+    formData.append('password', password);
+    
+    console.log("Attempting login for:", email);
+    
+    const response = await fetch(`${API_BASE_URL}/api/users/token`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Login failed');
     }
-  };
+    
+    const data = await response.json();
+    
+    // Store the token for future authenticated requests
+    sessionStorage.setItem('token', data.access_token);
+    sessionStorage.setItem('token_type', data.token_type);
+    
+    // Clear guest mode if it was set
+    sessionStorage.removeItem('guestMode');
+    setIsGuest(false);
+    
+    // Get user information
+    const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
+      headers: {
+        'Authorization': `${data.token_type} ${data.access_token}`
+      }
+    });
+    
+    if (userResponse.ok) {
+      const userData = await userResponse.json();
+      sessionStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      setIsAuthenticated(true);
+      
+      // Add the redirect here - this is where you put the router.push
+      router.push('/map');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Logout function
   const logout = () => {
