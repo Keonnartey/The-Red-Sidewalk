@@ -1,6 +1,6 @@
 <<<<<<< HEAD
 # The-Red-Sidewalk
-### Contributors: Aarya Desai, Katelyn Hucker, Keon Nartey, Jenny Chen, Matthew Holden
+### Contributors: Aarya Desai, Katelyn Hucker , Keon Nartey, Jenny Chen, Matthew Holden
 
 From the root directory run:
 
