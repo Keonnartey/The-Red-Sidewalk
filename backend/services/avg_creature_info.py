@@ -25,13 +25,13 @@ def get_avgs(db: Session, creature_name: str):
 
     sightings_sql = text("""
         SELECT 
-            i.user_id,
+            i.sighting_id,
             i.description_short,
             i.location_name,
             i.sighting_date, 
             r.rank
             FROM info.sightings_preview i, agg.creatures a, rankings.most_popular_sightings r
-        WHERE i.creature_id = a.creature_id AND LOWER(a.creature_name) = LOWER(:creature_name) AND r.creature_id = i.creature_id AND r.rank < 4
+        WHERE i.creature_id = a.creature_id AND LOWER(a.creature_name) = LOWER(:creature_name) AND r.creature_id = i.creature_id AND r.sighting_id = i.sighting_id AND r.rank < 4
         ORDER BY r.rank ASC
         LIMIT 3;
     """)
@@ -41,7 +41,7 @@ def get_avgs(db: Session, creature_name: str):
     if sightings_result:
         for row in sightings_result:
             top_sightings.append({
-                "id": str(row.user_id),
+                "id": str(row.sighting_id),
                 "description": row.description_short,
                 "location": row.location_name,
                 "date": row.sighting_date.strftime("%B %d, %Y") if row.sighting_date else "Unknown"
