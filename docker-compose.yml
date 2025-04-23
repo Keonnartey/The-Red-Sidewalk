@@ -36,31 +36,17 @@ services:
     volumes:
       - ./cryptid-sightings:/app  # Watch local files for hot reload
       - /app/node_modules # Avoid overwriting node_modules
-    command: npm run dev
+    command: sh -c "npm run build && npm run start"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
 volumes:
   postgres_data:
 
-  # web:
-  #   build:
-  #     context: ./backend
-  #   container_name: redsidewalk-flask
-  #   depends_on:
-  #     - db
-  #   ports:
-  #     - "5000:5000"  # Exposes the Flask app on port 5000
-  #   environment:
-  #     - FLASK_APP=app.py
-  #     - FLASK_ENV=development
-  #     - DB_HOST=db
-  #     - DB_PORT=5432
-  #     - DB_NAME=redsidewalk
-  #     - DB_USER=redsidewalk_user
-  #     - DB_PASSWORD=securepassword
-  #   volumes:
-  #     - ./backend:/backend  # Mounts the current directory as a volume in the container
-
-  #   command: flask run --host=0.0.0.0 --port=5000
 

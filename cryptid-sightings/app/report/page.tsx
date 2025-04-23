@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/auth-context"; // Adjust this path if needed
+import { useAuth } from "@/components/auth-provider"; // Adjust this path if needed
 import ReportFormModal from "@/components/report-form-modal";
 import { useRouter } from "next/navigation";
 
