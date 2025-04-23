@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import sightings, report, lore, users, discuss, filters, ratings  # Example router import
+from routers import sightings, report, lore, users, discuss, filters, ratings
+from utils.static_files import setup_static_files
 
 app = FastAPI()
 
@@ -29,11 +30,14 @@ async def log_requests(request, call_next):
     return response
 
 
+# Setup static file serving for uploads
+app = setup_static_files(app)
+
 # Include your routers here
 app.include_router(sightings.router, prefix="/sightings", tags=["Sightings"])
 app.include_router(report.router, prefix="/reports", tags=["Report"])
 app.include_router(filters.router, prefix="/filters", tags=["Filters"])
-app.include_router(lore.router, prefix = '/lore', tags = ["Lore"])
+app.include_router(lore.router, prefix="/lore", tags=["Lore"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])
 app.include_router(ratings.router, prefix="/ratings", tags=["Ratings"])

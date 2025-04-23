@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
-  id: number;
+  id: number | string;
   email: string;
   first_name: string;
   last_name: string;
@@ -12,6 +12,18 @@ interface User {
   is_active: boolean;
   role: string;
 }
+
+interface SignUpData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  userAddress?: string;
+  aboutMe?: string;
+  birthday?: string;
+  profilePic?: File | null;
+}
+
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +33,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   continueAsGuest: () => void;
+  signUp: (userData: SignUpData) => Promise<void>;
 }
 
 // Create auth context
@@ -32,13 +45,14 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: () => {},
   continueAsGuest: () => {},
+  signUp: async () => {},
 });
 
 // Hook to use the auth context
 export const useAuth = () => useContext(AuthContext);
 
 // Public routes that don't require authentication
-const publicRoutes = ['/', '/login', '/register'];
+const publicRoutes = ['/', '/login', '/register', '/signup'];
 
 // Routes allowed for guests
 const guestAllowedRoutes = ['/map'];
@@ -199,63 +213,135 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isGuest, isLoading, pathname, router, isPublicRoute, isGuestAllowedRoute]);
 
   // Login function
-  // In auth-provider.tsx, modify the login function:
-const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<void> => {
+    setIsLoading(true);
+    
+    try {
+      const API_BASE_URL = 'http://localhost:8000';
+      
+      // Create form data for the API request
+      const formData = new FormData();
+      formData.append('username', email); // FastAPI OAuth2 uses 'username' field
+      formData.append('password', password);
+      
+      console.log("Attempting login for:", email);
+      
+      const response = await fetch(`${API_BASE_URL}/api/users/token`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Login failed');
+      }
+      
+      const data = await response.json();
+      
+      // Store the token for future authenticated requests
+      sessionStorage.setItem('token', data.access_token);
+      sessionStorage.setItem('token_type', data.token_type);
+      
+      // Clear guest mode if it was set
+      sessionStorage.removeItem('guestMode');
+      setIsGuest(false);
+      
+      // Get user information
+      const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: {
+          'Authorization': `${data.token_type} ${data.access_token}`
+        }
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        sessionStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+        
+        // Add the redirect here - this is where you put the router.push
+        router.push('/map');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sign up function
+const signUp = async (userData: SignUpData): Promise<void> => {
   setIsLoading(true);
   
   try {
     const API_BASE_URL = 'http://localhost:8000';
     
-    // Create form data for the API request
-    const formData = new FormData();
-    formData.append('username', email); // FastAPI OAuth2 uses 'username' field
-    formData.append('password', password);
-    
-    console.log("Attempting login for:", email);
-    
-    const response = await fetch(`${API_BASE_URL}/api/users/token`, {
+    // First, register the user account
+    const registerResponse = await fetch(`${API_BASE_URL}/api/users/register`, {
       method: 'POST',
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Login failed');
-    }
-    
-    const data = await response.json();
-    
-    // Store the token for future authenticated requests
-    sessionStorage.setItem('token', data.access_token);
-    sessionStorage.setItem('token_type', data.token_type);
-    
-    // Clear guest mode if it was set
-    sessionStorage.removeItem('guestMode');
-    setIsGuest(false);
-    
-    // Get user information
-    const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
       headers: {
-        'Authorization': `${data.token_type} ${data.access_token}`
-      }
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        username: userData.email.split('@')[0] // Generate username from email
+      }),
     });
     
-    if (userResponse.ok) {
-      const userData = await userResponse.json();
-      sessionStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
-      
-      // Add the redirect here - this is where you put the router.push
-      router.push('/map');
+    if (!registerResponse.ok) {
+      const errorData = await registerResponse.json();
+      throw new Error(errorData.detail || 'Registration failed');
     }
+    
+    const newUserData = await registerResponse.json();
+    
+    // If we have profile data to upload, do that next
+    if (userData.userAddress || userData.aboutMe || userData.birthday || userData.profilePic) {
+      // Create form data for profile info
+      const profileFormData = new FormData();
+      profileFormData.append('user_id', newUserData.id.toString());
+      profileFormData.append('full_name', `${userData.firstName} ${userData.lastName}`);
+      
+      if (userData.userAddress) {
+        profileFormData.append('user_address', userData.userAddress);
+      }
+      
+      if (userData.aboutMe) {
+        profileFormData.append('about_me', userData.aboutMe);
+      }
+      
+      if (userData.birthday) {
+        profileFormData.append('birthday', userData.birthday);
+      }
+      
+      if (userData.profilePic) {
+        profileFormData.append('profile_pic', userData.profilePic);
+      }
+      
+      // Upload profile information
+      await fetch(`${API_BASE_URL}/api/users/profile`, {
+        method: 'POST',
+        body: profileFormData,
+      });
+    }
+    
+    // Automatically log in after successful registration
+    await login(userData.email, userData.password);
+    
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Sign up error:', error);
     throw error;
   } finally {
     setIsLoading(false);
   }
 };
+
+    
+
 
   // Logout function
   const logout = () => {
@@ -287,7 +373,8 @@ const login = async (email: string, password: string): Promise<void> => {
         isGuest,
         login,
         logout,
-        continueAsGuest
+        continueAsGuest,
+        signUp
       }}
     >
       {children}

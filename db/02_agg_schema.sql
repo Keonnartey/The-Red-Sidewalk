@@ -166,7 +166,6 @@ CREATE TABLE IF NOT EXISTS profile.user_stats (
 CREATE TABLE IF NOT EXISTS profile.users (
     user_id INT PRIMARY KEY,
     full_name VARCHAR NOT NULL,
-    user_address VARCHAR NOT NULL, 
     about_me TEXT,
     birthday DATE NOT NULL, 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 

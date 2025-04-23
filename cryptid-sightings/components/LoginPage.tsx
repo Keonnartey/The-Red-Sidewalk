@@ -112,7 +112,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       setIsSubmitting(false);
     }
   }
-};
+};  
 
   const handleGuestAccess = () => {
     continueAsGuest();
@@ -209,7 +209,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
           Don't have an account?{' '}
-          <Link href="/register" className="font-medium text-blue-600 hover:underline">
+          <Link href="/signup" className="font-medium text-blue-600 hover:underline">
             Sign up
           </Link>
         </p>

@@ -7,14 +7,10 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# JWT settings
-SECRET_KEY = os.getenv("SECRET_KEY", "your_default_secret_key")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 class UserService:
@@ -266,3 +262,132 @@ class UserService:
         except Exception as e:
             print(f"Error in authenticate_user: {str(e)}")
             return None
+
+    @staticmethod
+    def create_user(db: Session, user_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new user with all required records"""
+        try:
+            print(f"Creating new user with email: {user_data.get('email')}")
+
+            # Create app_user entry first to get user_id
+            app_user_query = text(
+                """
+                INSERT INTO profile.app_user 
+                (email, username, first_name, last_name, is_active, role) 
+                VALUES (:email, :username, :first_name, :last_name, :is_active, :role)
+                RETURNING id, email, username, first_name, last_name, is_active, role
+            """
+            )
+
+            app_user_params = {
+                "email": user_data.get("email"),
+                "username": user_data.get(
+                    "username", user_data.get("email").split("@")[0]
+                ),
+                "first_name": user_data.get("first_name"),
+                "last_name": user_data.get("last_name"),
+                "is_active": True,
+                "role": "user",
+            }
+
+            result = db.execute(app_user_query, app_user_params).first()
+
+            if not result:
+                raise Exception("Failed to create user record")
+
+            # Convert result to dict
+            new_user = {}
+            for key in result._mapping.keys():
+                new_user[key] = result._mapping[key]
+
+            user_id = new_user["id"]
+
+            # Create security record with hashed password
+            security_query = text(
+                """
+                INSERT INTO profile.security 
+                (user_id, email, password_hash, failed_attempts, last_login) 
+                VALUES (:user_id, :email, :password_hash, 0, CURRENT_TIMESTAMP)
+            """
+            )
+
+            security_params = {
+                "user_id": user_id,
+                "email": user_data.get("email"),
+                "password_hash": UserService.get_password_hash(
+                    user_data.get("password")
+                ),
+            }
+
+            db.execute(security_query, security_params)
+
+            # Create security_qa record if provided
+            if user_data.get("security_question") and user_data.get("security_answer"):
+                security_qa_query = text(
+                    """
+                    INSERT INTO profile.security_qa 
+                    (user_id, question, answer) 
+                    VALUES (:user_id, :question, :answer)
+                """
+                )
+
+                security_qa_params = {
+                    "user_id": user_id,
+                    "question": user_data.get("security_question"),
+                    "answer": user_data.get("security_answer"),
+                }
+
+                db.execute(security_qa_query, security_qa_params)
+
+            # Create initial user profile
+            profile_query = text(
+                """
+                INSERT INTO profile.users 
+                (user_id, full_name) 
+                VALUES (:user_id, :full_name)
+            """
+            )
+
+            profile_params = {
+                "user_id": user_id,
+                "full_name": f"{user_data.get('first_name')} {user_data.get('last_name')}",
+            }
+
+            db.execute(profile_query, profile_params)
+
+            # Create initial user_stats record
+            stats_query = text(
+                """
+                INSERT INTO profile.user_stats 
+                (user_id, unique_creature_count, total_sightings_count, bigfoot_count, 
+                dragon_count, ghost_count, alien_count, vampire_count, total_friends, 
+                comments_count, like_count, pictures_count, locations_count, user_avg_rating) 
+                VALUES (:user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0)
+            """
+            )
+
+            db.execute(stats_query, {"user_id": user_id})
+
+            # Create initial user_badges record
+            badges_query = text(
+                """
+                INSERT INTO profile.user_badges 
+                (user_id, unique_creature_count, total_sightings_count, bigfoot_count, 
+                dragon_count, ghost_count, alien_count, vampire_count, total_friends_count, 
+                comments_count, like_count, pictures_count, locations_count, user_avg_rating) 
+                VALUES (:user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0)
+            """
+            )
+
+            db.execute(badges_query, {"user_id": user_id})
+
+            # Commit all changes
+            db.commit()
+
+            print(f"Successfully created user with ID: {user_id}")
+            return new_user
+
+        except Exception as e:
+            db.rollback()
+            print(f"Error in create_user: {str(e)}")
+            raise e

@@ -240,16 +240,15 @@ INSERT INTO profile.user_stats (
 INSERT INTO profile.users (
     user_id,
     full_name,
-    user_address,
     about_me,
     birthday,
     profile_pic
 ) VALUES
-(1, 'John Doe', '123 Cryptid Lane, WV', 'Mothman enthusiast.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg'),
-(2, 'Jane Smith', '456 Bigfoot Ave, CA', 'Bigfoot hunter.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg'),
-(3, 'Alex Johnson', '789 Chupacabra Blvd, PR', 'Chupacabra tracker.', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg'),
-(4, 'Emily Davis', '321 Loch Ness Rd, NY', 'Loch Ness Monster researcher.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg'),
-(5, 'Chris Lee', '654 Kraken Bay, FL', 'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
+(1, 'John Doe', 'Mothman enthusiast.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg'),
+(2, 'Jane Smith', 'Bigfoot hunter.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg'),
+(3, 'Alex Johnson', 'Chupacabra tracker.', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg'),
+(4, 'Emily Davis', 'Loch Ness Monster researcher.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg'),
+(5, 'Chris Lee',  'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
 
 -- Dummy data for rankings.most_popular_sightings
 --INSERT INTO rankings.most_popular_sightings (
