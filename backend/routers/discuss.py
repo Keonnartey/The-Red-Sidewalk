@@ -1,116 +1,149 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+# backend/routers/discuss.py
+
+import os
+import requests
+from typing import Optional, Dict, Any, List
+
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from typing import Optional, Dict, Any
-from database import get_db  # Your DB session dependency
+
+from database import get_db
 
 router = APIRouter()
 
-# Define the creature mapping
+# ─── Creature mappings ─────────────────────────────────────────────────────────
 creature_types = {
     1: "ghost",
     2: "bigfoot",
     3: "dragon",
     4: "alien",
+    5: "vampire",
 }
-
-# Create an inverted mapping for filtering: creature name -> creature_id
 creature_name_to_id = {v: k for k, v in creature_types.items()}
+
+# ─── Presign endpoint ──────────────────────────────────────────────────────────
+LAMBDA_URL = os.getenv("LAMBDA_GET_PRESIGN_ENDPOINT", "").rstrip("/")
+if not LAMBDA_URL:
+    raise RuntimeError("Missing LAMBDA_GET_PRESIGN_ENDPOINT environment variable")
+
+def generate_presigned_urls(s3_keys: List[str]) -> List[str]:
+    """
+    For each key, POST to your Lambda URL and collect the signed URL.
+    Expects the lambda to return JSON { "url": "<signed_url>" } on 200.
+    """
+    signed: List[str] = []
+    for key in s3_keys:
+        resp = requests.post(LAMBDA_URL, json={"key": key})
+        if resp.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Presign lambda failed for {key}: {resp.status_code} {resp.text}"
+            )
+        signed.append(resp.json()["url"])
+    return signed
+
 
 @router.get("/posts")
 def get_posts(
+    request: Request,
     db: Session = Depends(get_db),
     creature: Optional[str] = Query(None),
-    location: Optional[str] = Query(None)
+    location: Optional[str] = Query(None),
 ):
     """
-    Retrieve a list of posts, optionally filtered by creature and location.
-    Each "post" corresponds to a row in info.sightings_preview joined to profile.users.
-    We also fetch aggregated up/down votes from social.interactions.
-    Creature filtering is applied using a mapping dictionary.
+    Fetch posts + comments + presigned image URLs via your Lambda endpoint.
     """
-
-    base_query = """
+    # 1) Main posts
+    sql = """
         SELECT
-            s.sighting_id AS post_id,
+            s.sighting_id       AS post_id,
             s.user_id,
             s.creature_id,
-            s.location_name AS location,
+            s.location_name     AS location,
             s.description_short AS content,
-            s.created_at AS time_posted,
-            'User ' || CAST(u.user_id AS TEXT) AS username,
-            (SELECT SUM(i.upvote_count)
-             FROM info.sightings_full i
-             WHERE i.sighting_id = s.sighting_id) AS upvotes,
-            (SELECT SUM(i.downvote_count)
-             FROM info.sightings_full i
-             WHERE i.sighting_id = s.sighting_id) AS downvotes
+            s.created_at        AS time_posted,
+            COALESCE(f.upvote_count, 0)   AS upvotes,
+            COALESCE(f.downvote_count, 0) AS downvotes,
+            COALESCE(u.full_name, 'User '||CAST(s.user_id AS TEXT)) AS username
         FROM info.sightings_preview s
-        LEFT JOIN profile.users u ON s.user_id = u.user_id
+        LEFT JOIN info.sightings_full f ON s.sighting_id = f.sighting_id
+        LEFT JOIN profile.users      u ON s.user_id      = u.user_id
         WHERE 1=1
     """
-
     params: Dict[str, Any] = {}
-
     if creature:
-        creature = creature.lower()
-        creature_id = creature_name_to_id.get(creature)
-        if creature_id is None:
-            raise HTTPException(status_code=400, detail="Invalid creature filter")
-        base_query += " AND s.creature_id = :creature_id"
-        params["creature_id"] = creature_id
-
+        cid = creature_name_to_id.get(creature.lower())
+        if cid is None:
+            raise HTTPException(400, "Invalid creature filter")
+        sql += " AND s.creature_id = :creature_id"
+        params["creature_id"] = cid
     if location:
-        base_query += " AND LOWER(s.location_name) LIKE '%' || LOWER(:location) || '%'"
+        sql += " AND LOWER(s.location_name) LIKE '%'||LOWER(:location)||'%'"
         params["location"] = location
+    sql += " ORDER BY s.created_at DESC;"
 
-
-    base_query += " ORDER BY s.created_at DESC;"
-
-    stmt = text(base_query)
-    result = db.execute(stmt, params)
-    rows = result.fetchall()
-
-    posts = []
-    for row in rows:
-        row_dict = dict(row._mapping)
-        # Add creature_name based on the creature_types mapping.
-        row_dict["creature_name"] = creature_types.get(row_dict["creature_id"], "Unknown")
-        row_dict["comments"] = []  # We'll attach comments below.
-        posts.append(row_dict)
+    rows = db.execute(text(sql), params).fetchall()
+    posts: List[Dict[str, Any]] = []
+    for r in rows:
+        d = dict(r._mapping)
+        d["creature_name"] = creature_types.get(d["creature_id"], "unknown")
+        d["comments"] = []
+        d["images"] = []
+        posts.append(d)
 
     post_ids = [p["post_id"] for p in posts]
-    if post_ids:
-        comments_query = text("""
-            SELECT
-                i.sighting_id AS post_id,
-                i.comment_id,
-                i.user_id,
-                i.comment,
-                f.upvote_count,
-                f.downvote_count,
-                'User ' || CAST(u.user_id AS TEXT) AS username
-            FROM social.interactions i
-            JOIN info.sightings_full f ON i.sighting_id = f.sighting_id
-            LEFT JOIN profile.users u ON i.user_id = u.user_id
-            WHERE i.sighting_id = ANY(:post_ids)
-            ORDER BY i.comment_id ASC
-        """)
-        comments_result = db.execute(comments_query, {"post_ids": post_ids})
-        comments_rows = comments_result.fetchall()
+    if not post_ids:
+        return posts
 
-        comments_map = {}
-        for cr in comments_rows:
-            cr_dict = dict(cr._mapping)
-            pid = cr_dict["post_id"]
-            if pid not in comments_map:
-                comments_map[pid] = []
-            comments_map[pid].append(cr_dict)
+    # 2) Comments
+    comments_sql = text("""
+        SELECT
+            i.sighting_id AS post_id,
+            i.comment_id,
+            i.user_id,
+            i.comment,
+            f.upvote_count,
+            f.downvote_count,
+            COALESCE(u.full_name, 'User '||CAST(i.user_id AS TEXT)) AS username
+        FROM social.interactions i
+        LEFT JOIN info.sightings_full f ON i.sighting_id = f.sighting_id
+        LEFT JOIN profile.users      u ON i.user_id        = u.user_id
+        WHERE i.sighting_id = ANY(:post_ids)
+        ORDER BY i.comment_id
+    """)
+    cr = db.execute(comments_sql, {"post_ids": post_ids}).fetchall()
+    cmap: Dict[int, List[Dict[str, Any]]] = {}
+    for r in cr:
+        m = dict(r._mapping)
+        cmap.setdefault(m["post_id"], []).append(m)
+    for p in posts:
+        p["comments"] = cmap.get(p["post_id"], [])
 
-        for p in posts:
-            p["comments"] = comments_map.get(p["post_id"], [])
+    # 3) Image keys → presigned URLs
+    keys_sql = text("""
+        SELECT sighting_id AS post_id, img_url
+        FROM info.sightings_imgs
+        WHERE sighting_id = ANY(:post_ids)
+        ORDER BY img_id
+    """)
+    kr = db.execute(keys_sql, {"post_ids": post_ids}).fetchall()
+    keys_map: Dict[int, List[str]] = {}
+    for r in kr:
+        pid = r._mapping["post_id"]
+        key = r._mapping["img_url"]
+        keys_map.setdefault(pid, []).append(key)
+
+    # Generate signed URLs per post
+    for p in posts:
+        keys = keys_map.get(p["post_id"], [])
+        if keys:
+            p["images"] = generate_presigned_urls(keys)
+        else:
+            p["images"] = []
 
     return posts
+
 
 @router.post("/posts/{post_id}/comment")
 def add_comment(
@@ -119,14 +152,7 @@ def add_comment(
     db: Session = Depends(get_db)
 ):
     """
-    Add a new comment to a post.
-    For testing, we force the user_id to 1.
-    Payload example:
-    {
-      "comment": "This is awesome!",
-      "upvote_count": 0,
-      "downvote_count": 0
-    }
+    Add a comment without touching upvote/downvote counts.
     """
     stmt = text("""
         INSERT INTO social.interactions (
@@ -134,42 +160,19 @@ def add_comment(
         )
         VALUES (
             (SELECT COALESCE(MAX(comment_id), 0) + 1 FROM social.interactions),
-            :sighting_id,
+            :post_id,
             :user_id,
             :comment
         )
     """)
     db.execute(stmt, {
-        "sighting_id": post_id,
-        "user_id": 1,  # Forced user id for testing.
+        "post_id": post_id,
+        "user_id": 1,             # test user
         "comment": payload["comment"]
-    })
-
-    # Insert the votes
-    stmt_votes = text("""
-        INSERT INTO info.sightings_full (
-            sighting_id, user_id, upvote_count, downvote_count
-        )
-        VALUES (
-            :sighting_id,
-            :user_id,
-            :upvote_count,
-            :downvote_count
-        )
-        ON CONFLICT (sighting_id) DO UPDATE SET
-            upvote_count = EXCLUDED.upvote_count,
-            downvote_count = EXCLUDED.downvote_count
-    """)
-    db.execute(stmt_votes, {
-        "sighting_id": post_id,
-        "user_id": 1,
-        "upvote_count": payload.get("upvote_count", 0),
-        "downvote_count": payload.get("downvote_count", 0)
     })
 
     db.commit()
     return {"status": "success", "message": "Comment added"}
-
 
 @router.post("/posts/{post_id}/upvote")
 def upvote_post(
@@ -178,39 +181,45 @@ def upvote_post(
     db: Session = Depends(get_db)
 ):
     """
-    Increase upvote count for a post.
-    For testing, assume user_id 1 is upvoting.
-    Payload example:
-    { "amount": 1 }
+    Allow a user to like a post exactly once.
+    For testing we still assume user_id = 1.
     """
-    increment = payload.get("amount", 1)
-    
-    # Try to update an existing vote row for user 100 where comment is NULL/empty
-    update_stmt = text("""
+    user_id = 1
+    # 1) Has this user already upvoted?
+    check = db.execute(text("""
+        SELECT 1
+        FROM info.sightings_full
+        WHERE sighting_id = :post_id
+          AND user_id     = :user_id
+          AND upvote_count > 0
+    """), {"post_id": post_id, "user_id": user_id}).fetchone()
+
+    if check:
+        return {"status": "already upvoted", "message": "You can only like once"}
+
+    # 2) Not yet upvoted: insert or update
+    inc = payload.get("amount", 1)
+    # First try to update an existing row (if user has downvoted before, for example)
+    result = db.execute(text("""
         UPDATE info.sightings_full
-        SET upvote_count = upvote_count + :increment
-        WHERE sighting_id = :sighting_id
-                AND user_id = 1
-    """)
-    result = db.execute(update_stmt, {"increment": increment, "sighting_id": post_id})
-    
-    # If no row was updated (user hasn't voted yet), insert a new vote row.
+        SET upvote_count = upvote_count + :inc
+        WHERE sighting_id = :post_id
+          AND user_id     = :user_id
+    """), {"inc": inc, "post_id": post_id, "user_id": user_id})
+
     if result.rowcount == 0:
-        insert_stmt = text("""
+        # no row existed: insert a fresh one
+        db.execute(text("""
             INSERT INTO info.sightings_full (
                 sighting_id, user_id, upvote_count, downvote_count
+            ) VALUES (
+                :post_id, :user_id, :inc, 0
             )
-            VALUES (
-                :sighting_id,
-                1,
-                :upvote_count,
-                0
-            )
-        """)
-        db.execute(insert_stmt, {"sighting_id": post_id, "upvote_count": increment})
-    
+        """), {"post_id": post_id, "user_id": user_id, "inc": inc})
+
     db.commit()
     return {"status": "success", "message": "Post upvoted"}
+
 
 
 @router.post("/posts/{post_id}/downvote")
@@ -219,22 +228,14 @@ def downvote_post(
     payload: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
-    """
-    Increase downvote count for a post.
-    For testing, assume user_id 1 is downvoting.
-    Payload example:
-    { "amount": 1 }
-    """
     increment = payload.get("amount", 1)
-    
     update_stmt = text("""
         UPDATE info.sightings_full
         SET downvote_count = downvote_count + :increment
         WHERE sighting_id = :sighting_id
-            AND user_id = 1
+          AND user_id     = 1
     """)
     result = db.execute(update_stmt, {"increment": increment, "sighting_id": post_id})
-    
     if result.rowcount == 0:
         insert_stmt = text("""
             INSERT INTO info.sightings_full (
@@ -248,6 +249,6 @@ def downvote_post(
             )
         """)
         db.execute(insert_stmt, {"sighting_id": post_id, "downvote_count": increment})
-    
+
     db.commit()
     return {"status": "success", "message": "Post downvoted"}
