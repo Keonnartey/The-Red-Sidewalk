@@ -1,11 +1,22 @@
-// components/PostCard.tsx
 "use client"
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ThumbsDown, ThumbsUp, Send, Flag } from "lucide-react"
-import { BigfootIcon, GhostIcon, DragonIcon, AlienIcon } from "@/components/creature-icons"
+import {
+  ThumbsDown,
+  ThumbsUp,
+  Send,
+  Flag,
+  UserPlus,
+  UserMinus,
+} from "lucide-react"
+import {
+  BigfootIcon,
+  GhostIcon,
+  DragonIcon,
+  AlienIcon,
+} from "@/components/creature-icons"
 import FlagModal from "@/components/flag-modal"
 
 interface Comment {
@@ -55,6 +66,11 @@ interface Props {
   disableUpvote?: boolean
   disableDownvote?: boolean
   imageClassName?: string
+
+  // ★ new
+  isFriend?: boolean
+  canToggleFriend?: boolean
+  onToggleFriend?: () => void
 }
 
 export default function PostCard({
@@ -66,6 +82,9 @@ export default function PostCard({
   disableUpvote = false,
   disableDownvote = false,
   imageClassName = "max-w-lg w-full h-auto object-cover rounded-lg shadow-lg",
+  isFriend = false,
+  canToggleFriend = false,
+  onToggleFriend,
 }: Props) {
   const [commentText, setCommentText] = useState("")
   const [showFlagModal, setShowFlagModal] = useState(false)
@@ -85,7 +104,25 @@ export default function PostCard({
     <div className="bg-white rounded-2xl shadow-lg max-w-2xl mx-auto overflow-hidden hover:shadow-2xl transition-shadow">
       {/* HEADER */}
       <div className="px-6 py-4 flex justify-between items-center border-b">
-        <h2 className="font-semibold text-lg">{post.username}</h2>
+        <div className="flex items-center space-x-4">
+          <h2 className="font-semibold text-lg">{post.username}</h2>
+          {canToggleFriend && onToggleFriend && (
+            <Button
+              size="sm"
+              variant={isFriend ? "destructive" : "outline"}
+              onClick={onToggleFriend}
+              className="flex items-center space-x-1"
+            >
+              {isFriend ? (
+                <UserMinus className="w-4 h-4" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              <span>{isFriend ? "Unfriend" : "Add Friend"}</span>
+            </Button>
+          )}
+        </div>
+
         <div className="flex items-center text-sm text-gray-500 space-x-4">
           <div className="flex items-center space-x-1">
             {getCreatureIcon(post.creature_name)}
@@ -146,7 +183,7 @@ export default function PostCard({
       {/* COMMENTS */}
       <div className="bg-gray-50 px-6 py-4 space-y-3">
         {post.comments.length > 0 ? (
-          post.comments.map((c) => (
+          post.comments.map(c => (
             <div key={c.comment_id} className="flex justify-between">
               <span>
                 <strong>{c.username}</strong> {c.comment}
@@ -162,7 +199,7 @@ export default function PostCard({
         <div className="flex items-center space-x-2">
           <Input
             value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
+            onChange={e => setCommentText(e.target.value)}
             placeholder="Add a comment…"
             className="flex-1 text-sm"
           />
@@ -172,6 +209,7 @@ export default function PostCard({
         </div>
       </div>
 
+      {/* FLAG */}
       <FlagModal
         open={showFlagModal}
         title="Flag Post"

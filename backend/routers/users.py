@@ -6,6 +6,7 @@ from datetime import timedelta
 import jwt
 from jwt.exceptions import PyJWTError
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from services.users import (
     UserService,
@@ -152,3 +153,20 @@ async def get_user(
         )
 
     return user
+
+class PublicUser(BaseModel):
+    user_id: int
+    full_name: str
+    profile_pic: Optional[str] = None
+
+@router.get("/public/{user_id}", response_model=PublicUser)
+def get_user_public(user_id: int, db: Session = Depends(get_db)):
+    stmt = text("""
+        SELECT user_id, full_name, profile_pic
+        FROM profile.users
+        WHERE user_id = :uid
+    """)
+    row = db.execute(stmt, {"uid": user_id}).fetchone()
+    if not row:
+        raise HTTPException(404, "User not found")
+    return dict(row._mapping)

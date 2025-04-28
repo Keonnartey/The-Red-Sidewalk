@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import sightings, report, lore, users, discuss, filters, ratings, content_flags, badges  # Example router import
+from routers import sightings, report, lore, users, discuss, filters, ratings, content_flags, badges, friends, profile  # Example router import
 
 app = FastAPI()
 
@@ -39,3 +39,5 @@ app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])
 app.include_router(ratings.router, prefix="/ratings", tags=["Ratings"])
 app.include_router(content_flags.router, prefix="/content_flags", tags=["Content_Flagging"])
+app.include_router(friends.router, prefix="/friends", tags=["Friends"])
+app.include_router(profile.router, prefix="/api/profile", tags=["Profile"])
