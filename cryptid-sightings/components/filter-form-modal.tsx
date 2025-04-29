@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useSightings } from "@/hooks/useSightingsStore";
 
 interface FilterProps {
   onClose: () => void;
@@ -40,6 +41,8 @@ interface GeoJSONFeatureCollection {
 }
 
 export default function Filter({ onClose }: FilterProps) {
+  const { setSightings, setShowFilter, setFiltered } = useSightings();
+
   const router = useRouter();
   const creatureTypeMap: Record<string, number> = {
     ghost: 1,
@@ -60,57 +63,45 @@ export default function Filter({ onClose }: FilterProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const creatureTypeKey = formData.creature_type.toLowerCase();
-    const creature_id = Number(creatureTypeMap[creatureTypeKey]);
-
-    // Log the creature_id to see the exact value
-    console.log('Creature ID:', creature_id);
-
-    if (isNaN(creature_id)) {
+    const creature_id = creatureTypeMap[creatureTypeKey];
+  
+    if (!creature_id) {
       alert("Please select a valid creature type.");
       return;
     }
-
+  
     try {
-      // Ensure the URL is properly formed with creature_id as an integer
       const url = `http://localhost:8000/filters/filter_creature?creature_id=${creature_id}`;
-      
-      console.log('Fetching URL:', url);  // Log the full URL to verify it
-
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
+      const res = await fetch(url);
+  
       if (!res.ok) {
         const errorBody = await res.text();
         console.error(`HTTP error! status: ${res.status}, body: ${errorBody}`);
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-
-      const data: GeoJSONFeatureCollection = await res.json();
-
-      // Transform the GeoJSON to a more frontend-friendly format
-      const transformedSightings = data.features.map(feature => ({
+  
+      const data = await res.json();
+      console.log("📦 Raw GeoJSON response:", data);
+  
+      const transformed = data.features.map((feature: any) => ({
         ...feature.properties,
         coordinates: {
           longitude: feature.geometry.coordinates[0],
-          latitude: feature.geometry.coordinates[1]
-        }
+          latitude: feature.geometry.coordinates[1],
+        },
       }));
-
-      // Store the transformed sightings in localStorage
-      localStorage.setItem('filteredSightings', JSON.stringify(transformedSightings));
-      localStorage.setItem('currentCreatureType', formData.creature_type);
-
-      onClose();
-      router.push("/map"); // Navigate to map page to display filtered sightings
+      
+      console.log("🧭 Filtered sightings received:", transformed); // ✅ Debug
+  
+      setSightings(transformed);
+      setFiltered(true);   // ✅ Push to context
+      setShowFilter(false);        // ✅ Close modal
     } catch (err) {
       console.error("Filtering error:", err);
-      alert("Something went wrong filtering the sightings. Please check the console for more details.");
+      alert("Something went wrong. Please check the console.");
     }
   };
+  
 
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black bg-opacity-50">

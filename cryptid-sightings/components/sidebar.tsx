@@ -1,20 +1,48 @@
-// components/Sidebar.tsx
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation"; // ✅ import router
 import {
-  MapPinned,
   Filter,
-  MapPinPlus,
   Users,
-  UserPlus,
   BookOpen,
-  User
-} from "lucide-react"
+  User,
+  UserPlus,
+  MapPinPlus,
+  MapPinned,
+} from "lucide-react";
+import { useSightings } from "@/hooks/useSightingsStore"; // ✅ context with resetSightings
 
 export default function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const router = useRouter();
+  const { setShowFilter, resetSightings, setShowReportForm, setLaunchFilterAfterRoute, setLaunchReportAfterRoute } = useSightings(); // ✅ include resetSightings
+
+  const handleMapClick = () => {
+    if (pathname === "/map") {
+      resetSightings(); // ✅ reset if already on map
+    } else {
+      router.push("/map"); // ✅ navigate if not on map
+    }
+  };
+
+  const handleFilterClick = () => {
+    if (pathname === "/map") {
+      setShowFilter(true);
+    } else {
+      setLaunchFilterAfterRoute(true);
+      router.push("/map");
+    }
+  };
+  
+  const handleReportClick = () => {
+    if (pathname === "/map") {
+      setShowReportForm(true);
+    } else {
+      setLaunchReportAfterRoute(true);
+      router.push("/map");
+    }
+  };
 
   const linkClass = (path: string) =>
     `w-[80px] h-[80px] rounded-lg flex items-center justify-center
@@ -24,28 +52,78 @@ export default function Sidebar() {
 
   return (
     <div className="w-[130px] bg-[#1e1d4a] flex flex-col items-center py-4 gap-8 shrink-0">
-      <Link href="/" className={linkClass("/")}>
-        <MapPinned className={iconColor} />
+      <button
+        onClick={() => {
+          setShowFilter(false);
+          setShowReportForm(false);
+          handleMapClick();
+        }}
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/map" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <MapPinned className="w-10 h-10 text-[#1e1d4a]" />
+      </button>
+
+      <button
+        onClick={() => {
+          console.log("🔍 Opening filter modal from sidebar");
+          setShowReportForm(false);
+          handleFilterClick();
+        }}
+        className="w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition"
+      >
+        <Filter className="w-10 h-10 text-[#1e1d4a]" />
+      </button>
+
+      <button
+        onClick={() => {
+          console.log("🔍 Opening report modal from sidebar");
+          setShowFilter(false);
+          handleReportClick();
+        }}
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition`}
+      >
+        <MapPinPlus className="w-10 h-10 text-[#1e1d4a]" />
+      </button>
+
+      <Link
+        href="/discuss"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/discuss" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <Users className="w-10 h-10 text-[#1e1d4a]" />
       </Link>
-      <Link href="/filter" className={linkClass("/filter")}>
-        <Filter className={iconColor} />
+
+            {/* Add the Socialness link here */}
+      <Link
+        href="/socialness"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/socialness" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <UserPlus className="w-10 h-10 text-[#1e1d4a]" />
       </Link>
-      <Link href="/report" className={linkClass("/report")}>
-        <MapPinPlus className={iconColor} />
+
+
+      <Link
+        href="/creatures"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <BookOpen className="w-10 h-10 text-[#1e1d4a]" />
       </Link>
-      <Link href="/discuss" className={linkClass("/discuss")}>
-        <Users className={iconColor} />
-      </Link>
-      {/* ✅ new Socialness link */}
-      <Link href="/socialness" className={linkClass("/socialness")}>
-        <UserPlus className={iconColor} />
-      </Link>
-      <Link href="/creatures" className={linkClass("/creatures")}>
-        <BookOpen className={iconColor} />
-      </Link>
-      <Link href="/profile" className={linkClass("/profile")}>
-        <User className={iconColor} />
+
+      <Link
+        href="/profile"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/profile" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <User className="w-10 h-10 text-[#1e1d4a]" />
       </Link>
     </div>
-  )
+  );
 }
