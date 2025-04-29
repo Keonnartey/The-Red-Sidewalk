@@ -36,11 +36,14 @@ interface PublicProfile {
     creature_id: number
     content: string
     time_posted: string
+    location?: string
   }>
 }
 
 interface PageProps {
-  params: { userId: string }
+  params: Promise<{
+    userId: string
+  }>
 }
 
 // Map creature_id → creature name
@@ -90,24 +93,30 @@ function renderStars(avg: number) {
 }
 
 export default async function ProfilePage({ params }: PageProps) {
-  const { userId } = params
-  // Fix: Provide a fallback URL if the environment variable is not set
-  const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
+  // Fix #1: Await the params object before destructuring it
+  const { userId } = await params
+  
+  console.log(`Loading profile for userId: ${userId}`)
+  
+  // Fix #2: Use the environment variable with proper fallback to backend service name
+  const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://backend:8000'
+  
+  console.log(`Using API URL: ${API}`)
   
   try {
+    console.log(`Attempting to fetch profile data from ${API}/api/profile/public/${userId}`)
+    
     const res = await fetch(`${API}/api/profile/public/${userId}`, {
       cache: "no-store",
     })
     
     if (!res.ok) {
-      return (
-        <div className="p-6 text-red-500">
-          Failed to load profile {userId}: {res.status} {res.statusText}
-        </div>
-      )
+      throw new Error(`Failed to load profile: ${res.status} ${res.statusText}`)
     }
 
     const data: PublicProfile = await res.json()
+    console.log("Successfully fetched profile data:", data)
+    
     const { user, badges, stats, sightings } = data
 
     return (
@@ -133,7 +142,7 @@ export default async function ProfilePage({ params }: PageProps) {
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <h1 className="text-2xl font-bold">{user.full_name}</h1>
-                  {renderStars(stats.user_avg_rating)}
+                  {stats.user_avg_rating && renderStars(stats.user_avg_rating)}
                 </div>
                 {user.about_me && (
                   <p className="italic text-gray-600 mt-1">{user.about_me}</p>
@@ -145,7 +154,7 @@ export default async function ProfilePage({ params }: PageProps) {
             <section>
               <h2 className="font-semibold mb-2">Badges</h2>
               <ul className="flex flex-wrap gap-2">
-                {Object.entries(badges)
+                {badges && Object.entries(badges)
                   .filter(([key, got]) => key !== "user_id" && got)
                   .map(([name]) => (
                     <li
@@ -159,53 +168,55 @@ export default async function ProfilePage({ params }: PageProps) {
             </section>
 
             {/* Stats */}
-            <section>
-              <h2 className="font-semibold mb-2">Stats</h2>
-              <ul className="grid grid-cols-2 gap-4 text-sm">
-                <li>
-                  <strong>Total sightings:</strong> {stats.total_sightings_count}
-                </li>
-                <li>
-                  <strong>Total friends:</strong> {stats.total_friends}
-                </li>
-                <li>
-                  <strong>Unique creatures:</strong> {stats.unique_creature_count}
-                </li>
-                <li>
-                  <strong>Comments made:</strong> {stats.comments_count}
-                </li>
-                <li>
-                  <strong>Bigfoot count:</strong> {stats.bigfoot_count}
-                </li>
-                <li>
-                  <strong>Likes received:</strong> {stats.like_count}
-                </li>
-                <li>
-                  <strong>Dragon count:</strong> {stats.dragon_count}
-                </li>
-                <li>
-                  <strong>Pictures posted:</strong> {stats.pictures_count}
-                </li>
-                <li>
-                  <strong>Ghost count:</strong> {stats.ghost_count}
-                </li>
-                <li>
-                  <strong>Locations visited:</strong> {stats.locations_count}
-                </li>
-                <li>
-                  <strong>Alien count:</strong> {stats.alien_count}
-                </li>
-                <li>
-                  <strong>Vampire count:</strong> {stats.vampire_count}
-                </li>
-              </ul>
-            </section>
+            {stats && (
+              <section>
+                <h2 className="font-semibold mb-2">Stats</h2>
+                <ul className="grid grid-cols-2 gap-4 text-sm">
+                  <li>
+                    <strong>Total sightings:</strong> {stats.total_sightings_count || 0}
+                  </li>
+                  <li>
+                    <strong>Total friends:</strong> {stats.total_friends || 0}
+                  </li>
+                  <li>
+                    <strong>Unique creatures:</strong> {stats.unique_creature_count || 0}
+                  </li>
+                  <li>
+                    <strong>Comments made:</strong> {stats.comments_count || 0}
+                  </li>
+                  <li>
+                    <strong>Bigfoot count:</strong> {stats.bigfoot_count || 0}
+                  </li>
+                  <li>
+                    <strong>Likes received:</strong> {stats.like_count || 0}
+                  </li>
+                  <li>
+                    <strong>Dragon count:</strong> {stats.dragon_count || 0}
+                  </li>
+                  <li>
+                    <strong>Pictures posted:</strong> {stats.pictures_count || 0}
+                  </li>
+                  <li>
+                    <strong>Ghost count:</strong> {stats.ghost_count || 0}
+                  </li>
+                  <li>
+                    <strong>Locations visited:</strong> {stats.locations_count || 0}
+                  </li>
+                  <li>
+                    <strong>Alien count:</strong> {stats.alien_count || 0}
+                  </li>
+                  <li>
+                    <strong>Vampire count:</strong> {stats.vampire_count || 0}
+                  </li>
+                </ul>
+              </section>
+            )}
           </div>
 
           {/* SIGHTINGS LIST */}
           <section className="max-w-2xl mx-auto mt-8">
             <h2 className="text-white text-xl font-semibold mb-4">Sightings</h2>
-            {sightings.length === 0 ? (
+            {!sightings || sightings.length === 0 ? (
               <p className="text-gray-400 italic">No sightings yet.</p>
             ) : (
               <ul className="space-y-4">
@@ -220,6 +231,7 @@ export default async function ProfilePage({ params }: PageProps) {
                       <div>
                         <div className="text-sm text-gray-500">
                           {new Date(s.time_posted).toLocaleDateString()}
+                          {s.location && ` - ${s.location}`}
                         </div>
                         <p className="mt-1 text-gray-800">{s.content}</p>
                       </div>
@@ -235,8 +247,22 @@ export default async function ProfilePage({ params }: PageProps) {
   } catch (error) {
     console.error('Error fetching profile:', error)
     return (
-      <div className="p-6 text-red-500">
-        Failed to load profile. Please check your API configuration and network connection.
+      <div className="flex h-screen bg-[#1e2a44] text-white p-6">
+        <aside className="fixed top-0 left-0 h-full w-[130px] bg-[#2d2a44]">
+          <Sidebar />
+        </aside>
+        
+        <main className="flex-1 ml-[130px] p-6">
+          <div className="max-w-2xl mx-auto bg-[#2d2a44] rounded-lg shadow p-6">
+            <h1 className="text-2xl font-bold mb-4">Profile Error</h1>
+            <p className="text-red-400">
+              Failed to load profile for user {userId}. Please try again later.
+            </p>
+            <p className="mt-4 text-sm text-gray-400">
+              Error details: {(error as Error).message}
+            </p>
+          </div>
+        </main>
       </div>
     )
   }
