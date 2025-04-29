@@ -11,6 +11,7 @@ const SignUpPage: React.FC = () => {
   
   const [formData, setFormData] = useState({
     email: '',
+    username: '', // New username field
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -24,6 +25,7 @@ const SignUpPage: React.FC = () => {
   
   const [errors, setErrors] = useState({
     email: '',
+    username: '', // New error field for username
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -78,6 +80,18 @@ const SignUpPage: React.FC = () => {
       isValid = false;
     }
 
+    // Username validation
+    if (!formData.username) {
+      newErrors.username = 'Username is required';
+      isValid = false;
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Username can only contain letters, numbers, and underscores';
+      isValid = false;
+    }
+
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -125,10 +139,7 @@ const SignUpPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Prepare the username (using email as username per your backend implementation)
-      const username = formData.email.split('@')[0];
-      
-      // First, register the user
+      // Now using the provided username instead of generating it from email
       const API_BASE_URL = 'http://localhost:8000';
       const registerResponse = await fetch(`${API_BASE_URL}/api/users/register`, {
         method: 'POST',
@@ -140,7 +151,7 @@ const SignUpPage: React.FC = () => {
           password: formData.password,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          username: username,
+          username: formData.username, // Using explicitly provided username
           security_question: formData.securityQuestion,
           security_answer: formData.securityAnswer
         }),
@@ -224,6 +235,26 @@ const SignUpPage: React.FC = () => {
                     placeholder="your@email.com"
                   />
                   {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                </div>
+                
+                {/* Username - NEW FIELD */}
+                <div>
+                  <label htmlFor="username" className="text-sm font-medium text-gray-700">
+                    Username <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                      errors.username ? 'border-red-500' : 'border-gray-300'
+                    } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    placeholder="Choose a unique username"
+                  />
+                  {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                  <p className="mt-1 text-xs text-gray-500">Username must be at least 3 characters and can only contain letters, numbers, and underscores.</p>
                 </div>
                 
                 {/* Password */}

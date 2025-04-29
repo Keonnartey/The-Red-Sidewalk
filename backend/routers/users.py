@@ -120,10 +120,10 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
                 detail="Email already registered",
             )
 
-        # Check if username is taken (using raw SQL since we don't have a direct ORM model)
+        # Check if username is taken
         username_query = text(
             """
-            SELECT id FROM profile.app_user WHERE username = :username
+            SELECT user_id FROM profile.security WHERE username = :username
         """
         )
         username_check = db.execute(

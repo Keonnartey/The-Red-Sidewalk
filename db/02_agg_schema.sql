@@ -6,6 +6,7 @@ SET CONSTRAINTS ALL DEFERRED;
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS profile.security (
     user_id INT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     failed_attempts INT DEFAULT 0,
@@ -165,9 +166,10 @@ CREATE TABLE IF NOT EXISTS profile.user_stats (
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS profile.users (
     user_id INT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR NOT NULL,
     about_me TEXT,
-    birthday DATE NOT NULL, 
+    birthday DATE, 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
     profile_pic VARCHAR,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED

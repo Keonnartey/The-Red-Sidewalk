@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import sightings, report, lore, users, discuss, filters, ratings
+from routers import sightings, report, lore, users, discuss, filters, ratings, accounts
 from utils.static_files import setup_static_files
 
 app = FastAPI()
@@ -41,3 +41,4 @@ app.include_router(lore.router, prefix="/lore", tags=["Lore"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])
 app.include_router(ratings.router, prefix="/ratings", tags=["Ratings"])
+app.include_router(accounts.router, prefix="/accounts", tags=["accounts"])

@@ -1,10 +1,10 @@
 -- Dummy data for profile.security
-INSERT INTO profile.security (user_id, email, password_hash, failed_attempts, last_login) VALUES
-(1, 'user1@example.com', '$2b$12$Wfzg1NRPWxTM3jde5GbzcunUdDL.UoyUOcTvkWPooOxeIy8pTE6uC', 0, CURRENT_TIMESTAMP),
-(2, 'user2@example.com', 'hashed_password_2', 1, CURRENT_TIMESTAMP),
-(3, 'user3@example.com', 'hashed_password_3', 0, CURRENT_TIMESTAMP),
-(4, 'user4@example.com', 'hashed_password_4', 2, CURRENT_TIMESTAMP),
-(5, 'user5@example.com', 'hashed_password_5', 0, CURRENT_TIMESTAMP);
+INSERT INTO profile.security (user_id, username, email, password_hash, failed_attempts, last_login) VALUES
+(1, 'user1@example.com', 'user1_bigfoothunter', '$2b$12$Wfzg1NRPWxTM3jde5GbzcunUdDL.UoyUOcTvkWPooOxeIy8pTE6uC', 0, CURRENT_TIMESTAMP),
+(2, 'user2@example.com', 'user2_bigfoothunter','hashed_password_2', 1, CURRENT_TIMESTAMP),
+(3, 'user3@example.com', 'user3_bigfoothunter','hashed_password_3', 0, CURRENT_TIMESTAMP),
+(4, 'user4@example.com', 'user4_bigfoothunter','hashed_password_4', 2, CURRENT_TIMESTAMP),
+(5, 'user5@example.com', 'user5_bigfoothunter','hashed_password_5', 0, CURRENT_TIMESTAMP);
 
 
 -- Dummy data for agg.creatures
@@ -239,16 +239,17 @@ INSERT INTO profile.user_stats (
 -- Dummy data for profile.users
 INSERT INTO profile.users (
     user_id,
+    username,
     full_name,
     about_me,
     birthday,
     profile_pic
 ) VALUES
-(1, 'John Doe', 'Mothman enthusiast.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg'),
-(2, 'Jane Smith', 'Bigfoot hunter.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg'),
-(3, 'Alex Johnson', 'Chupacabra tracker.', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg'),
-(4, 'Emily Davis', 'Loch Ness Monster researcher.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg'),
-(5, 'Chris Lee',  'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
+(1, 'user1_bigfoothunter', 'John Doe', 'Mothman enthusiast.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg'),
+(2, 'user2_bigfoothunter','Jane Smith', 'Bigfoot hunter.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg'),
+(3, 'user3_bigfoothunter','Alex Johnson', 'Chupacabra tracker.', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg'),
+(4, 'user4_bigfoothunter','Emily Davis', 'Loch Ness Monster researcher.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg'),
+(5, 'user5_bigfoothunter','Chris Lee',  'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
 
 -- Dummy data for rankings.most_popular_sightings
 --INSERT INTO rankings.most_popular_sightings (

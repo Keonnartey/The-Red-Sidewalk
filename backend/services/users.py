@@ -1,3 +1,4 @@
+# services/users.py
 import os
 import hashlib
 import jwt
@@ -7,6 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
+import random
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Password hashing context
@@ -46,7 +48,7 @@ class UserService:
             try:
                 user_query = text(
                     """
-                    SELECT user_id, full_name, user_address, about_me, birthday, profile_pic
+                    SELECT user_id, full_name, about_me, birthday, profile_pic
                     FROM profile.users
                     WHERE user_id = :user_id
                 """
@@ -67,7 +69,24 @@ class UserService:
                     user_dict["last_name"] = (
                         name_parts[1] if len(name_parts) > 1 else ""
                     )
+
+                # Get username from security table
+                username_query = text(
+                    """
+                    SELECT username
+                    FROM profile.security
+                    WHERE user_id = :user_id
+                """
+                )
+                username_result = db.execute(
+                    username_query, {"user_id": user_dict["user_id"]}
+                ).first()
+
+                if username_result:
+                    user_dict["username"] = username_result._mapping["username"]
+                else:
                     user_dict["username"] = email.split("@")[0]
+
             except Exception as e:
                 print(f"Error getting user details: {str(e)}")
 
@@ -91,7 +110,7 @@ class UserService:
             # Start with security table for email
             security_query = text(
                 """
-                SELECT user_id, email
+                SELECT user_id, email, username
                 FROM profile.security
                 WHERE user_id = :user_id
             """
@@ -114,7 +133,7 @@ class UserService:
             try:
                 user_query = text(
                     """
-                    SELECT user_id, full_name, user_address, about_me, birthday, profile_pic
+                    SELECT user_id, full_name, about_me, birthday, profile_pic
                     FROM profile.users
                     WHERE user_id = :user_id
                 """
@@ -133,7 +152,6 @@ class UserService:
                     user_dict["last_name"] = (
                         name_parts[1] if len(name_parts) > 1 else ""
                     )
-                    user_dict["username"] = user_dict["email"].split("@")[0]
             except Exception as e:
                 print(f"Error getting user details: {str(e)}")
 
@@ -269,123 +287,113 @@ class UserService:
         try:
             print(f"Creating new user with email: {user_data.get('email')}")
 
-            # Create app_user entry first to get user_id
-            app_user_query = text(
+            # Generate a random user_id between 1 and 999999
+            user_id = random.randint(1, 999999)
+
+            # Check if the generated ID already exists to avoid collisions
+            id_check_query = text(
                 """
-                INSERT INTO profile.app_user 
-                (email, username, first_name, last_name, is_active, role) 
-                VALUES (:email, :username, :first_name, :last_name, :is_active, :role)
-                RETURNING id, email, username, first_name, last_name, is_active, role
+                SELECT EXISTS (SELECT 1 FROM profile.security WHERE user_id = :user_id)
             """
             )
 
-            app_user_params = {
-                "email": user_data.get("email"),
-                "username": user_data.get(
-                    "username", user_data.get("email").split("@")[0]
-                ),
-                "first_name": user_data.get("first_name"),
-                "last_name": user_data.get("last_name"),
-                "is_active": True,
-                "role": "user",
-            }
+            # Keep generating IDs until we find one that doesn't exist
+            id_exists = True
+            while id_exists:
+                user_id = random.randint(1, 999999)
+                result = db.execute(id_check_query, {"user_id": user_id}).scalar()
+                id_exists = result
 
-            result = db.execute(app_user_query, app_user_params).first()
+            # Start a transaction
+            transaction = db.begin_nested()
 
-            if not result:
-                raise Exception("Failed to create user record")
-
-            # Convert result to dict
-            new_user = {}
-            for key in result._mapping.keys():
-                new_user[key] = result._mapping[key]
-
-            user_id = new_user["id"]
-
-            # Create security record with hashed password
-            security_query = text(
-                """
-                INSERT INTO profile.security 
-                (user_id, email, password_hash, failed_attempts, last_login) 
-                VALUES (:user_id, :email, :password_hash, 0, CURRENT_TIMESTAMP)
-            """
-            )
-
-            security_params = {
-                "user_id": user_id,
-                "email": user_data.get("email"),
-                "password_hash": UserService.get_password_hash(
-                    user_data.get("password")
-                ),
-            }
-
-            db.execute(security_query, security_params)
-
-            # Create security_qa record if provided
-            if user_data.get("security_question") and user_data.get("security_answer"):
-                security_qa_query = text(
+            try:
+                # Create security entry with the generated user_id
+                security_query = text(
                     """
-                    INSERT INTO profile.security_qa 
-                    (user_id, question, answer) 
-                    VALUES (:user_id, :question, :answer)
+                    INSERT INTO profile.security 
+                    (user_id, username, email, password_hash) 
+                    VALUES (:user_id, :username, :email, :password_hash)
+                    RETURNING user_id, username, email
                 """
                 )
 
-                security_qa_params = {
+                security_params = {
                     "user_id": user_id,
-                    "question": user_data.get("security_question"),
-                    "answer": user_data.get("security_answer"),
+                    "username": user_data.get("username"),
+                    "email": user_data.get("email"),
+                    "password_hash": UserService.get_password_hash(
+                        user_data.get("password")
+                    ),
                 }
 
-                db.execute(security_qa_query, security_qa_params)
+                result = db.execute(security_query, security_params).first()
 
-            # Create initial user profile
-            profile_query = text(
+                if not result:
+                    raise Exception("Failed to create security record")
+
+                # Create user profile
+                users_query = text(
+                    """
+                    INSERT INTO profile.users 
+                    (user_id, username, full_name, about_me, birthday) 
+                    VALUES (:user_id, :username, :full_name, :about_me, :birthday)
                 """
-                INSERT INTO profile.users 
-                (user_id, full_name) 
-                VALUES (:user_id, :full_name)
-            """
-            )
+                )
 
-            profile_params = {
-                "user_id": user_id,
-                "full_name": f"{user_data.get('first_name')} {user_data.get('last_name')}",
-            }
+                users_params = {
+                    "user_id": user_id,
+                    "username": user_data.get("username"),
+                    "full_name": f"{user_data.get('first_name')} {user_data.get('last_name')}",
+                    "about_me": None,
+                    "birthday": None,
+                }
 
-            db.execute(profile_query, profile_params)
+                db.execute(users_query, users_params)
 
-            # Create initial user_stats record
-            stats_query = text(
+                # Create user_stats record
+                stats_query = text(
+                    """
+                    INSERT INTO profile.user_stats (user_id)
+                    VALUES (:user_id)
                 """
-                INSERT INTO profile.user_stats 
-                (user_id, unique_creature_count, total_sightings_count, bigfoot_count, 
-                dragon_count, ghost_count, alien_count, vampire_count, total_friends, 
-                comments_count, like_count, pictures_count, locations_count, user_avg_rating) 
-                VALUES (:user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0)
-            """
-            )
+                )
 
-            db.execute(stats_query, {"user_id": user_id})
+                db.execute(stats_query, {"user_id": user_id})
 
-            # Create initial user_badges record
-            badges_query = text(
+                # Create user_badges record
+                badges_query = text(
+                    """
+                    INSERT INTO profile.user_badges (user_id)
+                    VALUES (:user_id)
                 """
-                INSERT INTO profile.user_badges 
-                (user_id, unique_creature_count, total_sightings_count, bigfoot_count, 
-                dragon_count, ghost_count, alien_count, vampire_count, total_friends_count, 
-                comments_count, like_count, pictures_count, locations_count, user_avg_rating) 
-                VALUES (:user_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0)
-            """
-            )
+                )
 
-            db.execute(badges_query, {"user_id": user_id})
+                db.execute(badges_query, {"user_id": user_id})
 
-            # Commit all changes
-            db.commit()
+                # Prepare the response
+                new_user = {
+                    "id": user_id,
+                    "email": user_data.get("email"),
+                    "username": user_data.get("username"),
+                    "first_name": user_data.get("first_name"),
+                    "last_name": user_data.get("last_name"),
+                    "is_active": True,
+                    "role": "user",
+                }
 
-            print(f"Successfully created user with ID: {user_id}")
-            return new_user
+                # Commit the transaction
+                transaction.commit()
+
+                # Commit to the database
+                db.commit()
+
+                print(f"Successfully created user with ID: {user_id}")
+                return new_user
+
+            except Exception as e:
+                transaction.rollback()
+                raise e
 
         except Exception as e:
             db.rollback()
