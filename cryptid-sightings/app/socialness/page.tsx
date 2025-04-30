@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import Sidebar from "@/components/Sidebar"
+import Sidebar from "@/components/sidebar"
 import { User as UserIcon } from "lucide-react"
 
 interface PublicUser {

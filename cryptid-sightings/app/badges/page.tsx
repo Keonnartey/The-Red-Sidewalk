@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { BadgeModal } from "@/components/badges/badge-modal";
 import { BadgeGrid } from "@/components/badges/badge-grid";
 import { Button } from "@/components/ui/button";
+import Sidebar from "@/components/sidebar";
+import { useRouter } from "next/navigation";
 
 interface UserProfile {
   user_id: number;
@@ -57,6 +59,8 @@ export default function BadgesPage() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [modalBadge, setModalBadge] = useState<string | null>(null);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [activeTab, setActiveTab] = useState("badges");
+  const router = useRouter();
 
   // For demonstration purposes, using a hardcoded user id.
   const userId = 1;
@@ -67,9 +71,31 @@ export default function BadgesPage() {
     fetchStats();
   }, []);
 
+  // Set the active tab based on the current route when component mounts
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes("/profile/general")) {
+      setActiveTab("general");
+    } else if (path.includes("/profile/socialness")) {
+      setActiveTab("socialness");
+    } else if (path.includes("/badges")) {
+      setActiveTab("badges");
+    } else if (path.includes("/profile/settings")) {
+      setActiveTab("settings");
+    }
+  }, []);
+
+  // Navigation handler
+  const navigateTo = (tab: string, route: string) => {
+    setActiveTab(tab);
+    router.push(route);
+  };
+
   async function fetchProfile() {
     try {
-      const res = await fetch(`http://localhost:8000/badges/profile?user_id=${userId}`);
+      // Use the same base URL format as your profile page
+      const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const res = await fetch(`${API}/badges/profile?user_id=${userId}`);
       if (!res.ok) throw new Error("Failed to fetch profile");
       const data: UserProfile = await res.json();
       setProfile(data);
@@ -80,7 +106,8 @@ export default function BadgesPage() {
 
   async function fetchBadges() {
     try {
-      const res = await fetch(`http://localhost:8000/badges/badges?user_id=${userId}`);
+      const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const res = await fetch(`${API}/badges/badges?user_id=${userId}`);
       if (!res.ok) throw new Error("Failed to fetch badges");
       const data: UserBadges = await res.json();
       setBadges(data);
@@ -91,7 +118,8 @@ export default function BadgesPage() {
 
   async function fetchStats() {
     try {
-      const res = await fetch(`http://localhost:8000/badges/stats?user_id=${userId}`);
+      const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const res = await fetch(`${API}/badges/stats?user_id=${userId}`);
       if (!res.ok) throw new Error("Failed to fetch stats");
       const data: UserStats = await res.json();
       setStats(data);
@@ -142,9 +170,14 @@ export default function BadgesPage() {
     }
   });
 
-    return (
-    <div className="min-h-screen bg-[#1e2a44] p-6">
-      <div className="ml-[130px]">
+  return (
+    <div className="flex h-screen bg-[#1e2a44] text-gray-800">
+      {/* Sidebar - matching the profile page layout */}
+      <aside className="fixed top-0 left-0 h-full w-[130px] bg-[#2d2a44]">
+        <Sidebar />
+      </aside>
+
+      <main className="flex-1 ml-[130px] p-6 overflow-y-auto">
         {/* 1. Welcome Back Title */}
         <h1 className="text-white text-4xl font-bold mb-8">
           Welcome Back {profile?.username ?? `User ${profile?.user_id ?? ""}`}
@@ -186,8 +219,7 @@ export default function BadgesPage() {
         {modalBadge && (
           <BadgeModal badgeKey={modalBadge} onClose={() => setModalBadge(null)} />
         )}
-      </div>
+      </main>
     </div>
   );
-
 }
