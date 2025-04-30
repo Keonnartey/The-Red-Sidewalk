@@ -278,3 +278,11 @@ INSERT INTO info.sightings_preview (
 (8, 5, 'Estradaview, Eritrea', 'Saw a vampire near Estradaview, Eritrea.', 36, 502, '2025-01-15', ST_SetSRID(ST_MakePoint(36.199014, 13.086366), 4326)),
 (32, 3, 'Port Billy, United States Virgin Islands', 'Saw a dragon near Port Billy, United States Virgin Islands.', 103, 454, '2024-09-12', ST_SetSRID(ST_MakePoint(126.153954, -18.029276), 4326)),
 (12, 4, 'Lisamouth, Cook Islands', 'Saw a alien near Lisamouth, Cook Islands.', 118, 890, '2024-08-25', ST_SetSRID(ST_MakePoint(41.854044, -27.919584), 4326));
+
+--
+-- ensure every user has a badge record
+--
+INSERT INTO profile.user_badges_real (user_id)
+SELECT user_id
+  FROM profile.security
+ON CONFLICT DO NOTHING;

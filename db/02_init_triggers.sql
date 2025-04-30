@@ -418,3 +418,120 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_stats_on_friend
 AFTER INSERT ON profile.social
 FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_friend();
+
+------------------------------------------------------------
+-- Function to recompute ALL badges for a given user
+------------------------------------------------------------
+CREATE OR REPLACE FUNCTION profile.update_user_badges(user_id_input INT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE profile.user_badges_real ub
+  SET
+    -- saw at least one Bigfoot?
+    bigfoot_amateur = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+        AND creature_id = (
+          SELECT creature_id
+            FROM agg.creatures
+           WHERE lower(creature_name) = 'bigfoot'
+        )
+    ),
+    -- made at least one friend?
+    lets_be_friends = (
+      SELECT COUNT(*) >= 1
+      FROM profile.social
+      WHERE user_id = user_id_input
+    ),
+    -- found every creature at least once?
+    elite_hunter = (
+      SELECT COUNT(DISTINCT creature_id)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) = (SELECT COUNT(*) FROM agg.creatures),
+    -- left at least one comment?
+    socialite = (
+      SELECT COUNT(*) >= 1
+      FROM social.interactions
+      WHERE user_id = user_id_input
+    ),
+    -- saw at least two different creature types?
+    diversify = (
+      SELECT COUNT(DISTINCT creature_id)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) >= 2,
+    -- posted sightings in ≥5 distinct locations?
+    well_traveled = (
+      SELECT COUNT(DISTINCT location_name)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) >= 5,
+    -- given at least three 1-star ratings?
+    hallucinator = (
+      SELECT COUNT(*) >= 3
+      FROM social.ratings
+      WHERE user_id = user_id_input
+        AND rating = 1
+    ),
+    -- uploaded at least one photo?
+    camera_ready = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_imgs si
+      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+      WHERE sp.user_id = user_id_input
+    ),
+    -- uploaded a dragon selfie?
+    dragon_rider = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_imgs si
+      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+      JOIN agg.creatures c           ON sp.creature_id = c.creature_id
+      WHERE sp.user_id = user_id_input
+        AND lower(c.creature_name) = 'dragon'
+    )
+  WHERE ub.user_id = user_id_input;
+END;
+$$ LANGUAGE plpgsql;
+
+
+------------------------------------------------------------
+-- Triggers to fire badge recalculation
+------------------------------------------------------------
+-- Whenever someone logs a new sighting:
+DROP TRIGGER IF EXISTS trg_badges_on_sighting ON info.sightings_preview;
+CREATE TRIGGER trg_badges_on_sighting
+  AFTER INSERT ON info.sightings_preview
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone adds a friend:
+DROP TRIGGER IF EXISTS trg_badges_on_friend ON profile.social;
+CREATE TRIGGER trg_badges_on_friend
+  AFTER INSERT ON profile.social
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone leaves a comment:
+DROP TRIGGER IF EXISTS trg_badges_on_comment ON social.interactions;
+CREATE TRIGGER trg_badges_on_comment
+  AFTER INSERT ON social.interactions
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone rates a sighting:
+DROP TRIGGER IF EXISTS trg_badges_on_rating ON social.ratings;
+CREATE TRIGGER trg_badges_on_rating
+  AFTER INSERT OR UPDATE ON social.ratings
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone uploads a photo:
+DROP TRIGGER IF EXISTS trg_badges_on_photo ON info.sightings_imgs;
+CREATE TRIGGER trg_badges_on_photo
+  AFTER INSERT ON info.sightings_imgs
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(
+    (SELECT user_id FROM info.sightings_preview WHERE sighting_id = NEW.sighting_id)
+);
