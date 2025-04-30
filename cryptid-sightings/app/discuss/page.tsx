@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, MapPin, RefreshCw } from "lucide-react"
 import PostCard from "@/components/discuss/PostCard"
-import Sidebar from "@/components/sidebar"
+import Sidebar from "@/components/Sidebar"
 
 interface Comment {
   comment_id: number
