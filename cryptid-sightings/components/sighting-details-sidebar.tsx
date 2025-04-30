@@ -15,8 +15,6 @@ interface SightingDetailsSidebarProps {
     height_inch: number;
     weight_lb: number;
     sighting_date: string;
-    latitude: number;
-    longitude: number;
   };
   onClose: () => void;
 }

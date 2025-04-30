@@ -374,8 +374,6 @@ export default function ReportFormModal({ onClose }: ReportFormModalProps) {
                   onClick={() => {
                     setShowStatusPopup(false);
                     onClose();
-                    router.push("/");
-                    setTimeout(() => window.location.reload(), 100);
                   }}
                   className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
                 >

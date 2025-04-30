@@ -1,4 +1,3 @@
-// app/discuss/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -32,7 +31,10 @@ interface Post {
 }
 
 export default function DiscussPage() {
+  const CURRENT_USER_ID = 1
+
   const [posts, setPosts] = useState<Post[]>([])
+  const [friends, setFriends] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
 
   // Filters
@@ -40,28 +42,41 @@ export default function DiscussPage() {
   const [locationFilter, setLocationFilter] = useState("")
   const [showImagesOnly, setShowImagesOnly] = useState(false)
 
-  // Disable state for up/down votes
+  // Prevent repeat up/down
   const [upvotedPosts, setUpvotedPosts] = useState<Set<number>>(new Set())
   const [downvotedPosts, setDownvotedPosts] = useState<Set<number>>(new Set())
 
-  // For location parts
+  // For our <datalist>
   const [locationParts, setLocationParts] = useState<string[]>([])
 
-  // Fetch all posts once
+  // 1️⃣ Fetch posts
   async function fetchPosts() {
+    const res = await fetch("http://localhost:8000/discuss/posts")
+    if (!res.ok) throw new Error("Failed to fetch posts")
+    const data: Post[] = await res.json()
+    setPosts(data)
+
+    // build datalist
+    const parts = new Set<string>()
+    data.forEach(p =>
+      p.location.split(",").forEach(chunk => parts.add(chunk.trim()))
+    )
+    setLocationParts([...parts])
+  }
+
+  // 2️⃣ Fetch your friends
+  async function fetchFriends() {
+    const res = await fetch("http://localhost:8000/friends")
+    if (!res.ok) throw new Error("Failed to fetch friends")
+    const fids: number[] = await res.json()
+    setFriends(new Set(fids))
+  }
+
+  // Combined
+  async function fetchAll() {
     setLoading(true)
     try {
-      const res = await fetch("http://localhost:8000/discuss/posts")
-      if (!res.ok) throw new Error("Failed to fetch")
-      const data: Post[] = await res.json()
-      setPosts(data)
-
-      // build locationParts: split each location on commas, trim, unique
-      const parts = new Set<string>()
-      data.forEach((p) =>
-        p.location.split(",").forEach((part) => parts.add(part.trim()))
-      )
-      setLocationParts(Array.from(parts))
+      await Promise.all([fetchPosts(), fetchFriends()])
     } catch (err) {
       console.error(err)
     } finally {
@@ -70,10 +85,25 @@ export default function DiscussPage() {
   }
 
   useEffect(() => {
-    fetchPosts()
+    fetchAll()
   }, [])
 
-  // Handlers with idempotency
+  // 🔃 Toggle friend / unfriend
+  async function handleToggleFriend(userId: number) {
+    const res = await fetch(`http://localhost:8000/friends/${userId}`, {
+      method: "POST",
+    })
+    if (!res.ok) return
+    const { action, friend_id } = await res.json()
+    setFriends(prev => {
+      const next = new Set(prev)
+      if (action === "added") next.add(friend_id)
+      else next.delete(friend_id)
+      return next
+    })
+  }
+
+  // 👍 Upvote once
   async function handleUpvotePost(postId: number) {
     if (upvotedPosts.has(postId)) return
     const res = await fetch(
@@ -86,10 +116,10 @@ export default function DiscussPage() {
     )
     const json = await res.json()
     if (json.status === "success" || json.status === "already upvoted") {
-      setUpvotedPosts((prev) => new Set(prev).add(postId))
+      setUpvotedPosts(p => new Set(p).add(postId))
       if (json.status === "success") {
-        setPosts((ps) =>
-          ps.map((p) =>
+        setPosts(ps =>
+          ps.map(p =>
             p.post_id === postId
               ? { ...p, upvotes: (p.upvotes ?? 0) + 1 }
               : p
@@ -99,6 +129,7 @@ export default function DiscussPage() {
     }
   }
 
+  // 👎 Downvote once
   async function handleDownvotePost(postId: number) {
     if (downvotedPosts.has(postId)) return
     const res = await fetch(
@@ -111,10 +142,10 @@ export default function DiscussPage() {
     )
     const json = await res.json()
     if (json.status === "success" || json.status === "already downvoted") {
-      setDownvotedPosts((prev) => new Set(prev).add(postId))
+      setDownvotedPosts(p => new Set(p).add(postId))
       if (json.status === "success") {
-        setPosts((ps) =>
-          ps.map((p) =>
+        setPosts(ps =>
+          ps.map(p =>
             p.post_id === postId
               ? { ...p, downvotes: (p.downvotes ?? 0) + 1 }
               : p
@@ -124,6 +155,7 @@ export default function DiscussPage() {
     }
   }
 
+  // 💬 Comment
   async function handleAddComment(postId: number, text: string) {
     const res = await fetch(
       `http://localhost:8000/discuss/posts/${postId}/comment`,
@@ -136,14 +168,14 @@ export default function DiscussPage() {
     if (res.ok) {
       const newC: Comment = {
         comment_id: Date.now(),
-        user_id: 1,
+        user_id: CURRENT_USER_ID,
         username: "You",
         comment: text,
         upvote_count: 0,
         downvote_count: 0,
       }
-      setPosts((ps) =>
-        ps.map((p) =>
+      setPosts(ps =>
+        ps.map(p =>
           p.post_id === postId
             ? { ...p, comments: [...p.comments, newC] }
             : p
@@ -152,80 +184,77 @@ export default function DiscussPage() {
     }
   }
 
-  // Compute filtered posts
+  // apply filters in‐memory
   const visiblePosts = posts
-    .filter((p) =>
+    .filter(p =>
       creatureFilter
-        ? p.creature_name
-            .toLowerCase()
-            .includes(creatureFilter.toLowerCase())
+        ? p.creature_name.toLowerCase().includes(creatureFilter.toLowerCase())
         : true
     )
-    .filter((p) =>
+    .filter(p =>
       locationFilter
         ? p.location.toLowerCase().includes(locationFilter.toLowerCase())
         : true
     )
-    .filter((p) => (showImagesOnly ? p.images.length > 0 : true))
+    .filter(p => (showImagesOnly ? p.images.length > 0 : true))
 
   return (
     <div className="flex h-screen bg-[#1e2a44] text-gray-800">
-      {/* Sidebar */}
       <aside className="fixed top-0 left-0 h-full w-[130px] bg-[#2d2a44]">
         <Sidebar />
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col ml-[130px]">
         <header className="p-6">
           <h1 className="text-white text-4xl font-bold text-center mb-6">
             DISCUSS SIGHTINGS
           </h1>
 
-          {/* Filter bar */}
           <div className="flex flex-wrap items-center justify-center gap-4">
-            {/* Creature */}
             <div className="relative w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                size={16}
+              />
               <Input
                 placeholder="Creature…"
                 value={creatureFilter}
-                onChange={(e) => setCreatureFilter(e.target.value)}
+                onChange={e => setCreatureFilter(e.target.value)}
                 className="pl-10 pr-4 h-10 rounded-full bg-[#dacfff] placeholder-gray-600 focus:ring-2 focus:ring-purple-400"
               />
             </div>
 
-            {/* Location */}
             <div className="relative w-48">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <MapPin
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                size={16}
+              />
               <input
                 list="locParts"
                 placeholder="Location…"
                 value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
+                onChange={e => setLocationFilter(e.target.value)}
                 className="pl-10 pr-4 h-10 rounded-full bg-[#dacfff] placeholder-gray-600 focus:ring-2 focus:ring-purple-400 outline-none w-full"
               />
               <datalist id="locParts">
-                {locationParts.map((part) => (
-                  <option key={part} value={part} />
+                {locationParts.map(chunk => (
+                  <option key={chunk} value={chunk} />
                 ))}
               </datalist>
             </div>
 
-            {/* Images only */}
             <label className="flex items-center space-x-2 text-white">
               <input
                 type="checkbox"
                 checked={showImagesOnly}
-                onChange={() => setShowImagesOnly((s) => !s)}
+                onChange={() => setShowImagesOnly(s => !s)}
                 className="h-5 w-5 rounded border-gray-300 bg-white focus:ring-2 focus:ring-purple-400"
               />
               <span>Images only</span>
             </label>
 
-            {/* Refresh */}
             <Button
-              onClick={fetchPosts}
+              onClick={fetchAll}
               className="flex items-center space-x-2 h-10 bg-purple-800 hover:bg-purple-700 px-4 rounded-full"
             >
               <RefreshCw className="w-4 h-4" />
@@ -234,23 +263,29 @@ export default function DiscussPage() {
           </div>
         </header>
 
-        {/* Posts list */}
         <main className="flex-1 overflow-y-auto px-6 pb-6">
           <div className="max-w-3xl mx-auto space-y-6">
-            {loading && <p className="text-center text-white">Loading posts…</p>}
-            {!loading && visiblePosts.length === 0 && (
-              <p className="text-center text-gray-400">No sightings match those filters.</p>
+            {loading && (
+              <p className="text-center text-white">Loading posts…</p>
             )}
-            {visiblePosts.map((post) => (
+            {!loading && visiblePosts.length === 0 && (
+              <p className="text-center text-gray-400">
+                No sightings match those filters.
+              </p>
+            )}
+            {visiblePosts.map(p => (
               <PostCard
-                key={post.post_id}
-                post={post}
+                key={p.post_id}
+                post={p}
                 onUpvote={handleUpvotePost}
                 onDownvote={handleDownvotePost}
                 onAddComment={handleAddComment}
                 onFlagContent={() => {}}
-                disableUpvote={upvotedPosts.has(post.post_id)}
-                disableDownvote={downvotedPosts.has(post.post_id)}
+                disableUpvote={upvotedPosts.has(p.post_id)}
+                disableDownvote={downvotedPosts.has(p.post_id)}
+                isFriend={friends.has(p.user_id)}
+                canToggleFriend={p.user_id !== CURRENT_USER_ID}
+                onToggleFriend={() => handleToggleFriend(p.user_id)}
                 imageClassName="max-w-sm w-full h-auto object-cover rounded-lg shadow-lg mx-auto"
               />
             ))}
