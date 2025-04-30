@@ -13,32 +13,38 @@ interface PublicUser {
 }
 
 export default function SocialnessPage() {
+  // ① fallback to your backend container name + port
+  const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://backend:8000"
+  console.log("🤖 SocialnessPage using API =", API)
+
   const [friends, setFriends] = useState<PublicUser[]>([])
-  const [error, setError] = useState<string|null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("http://localhost:8000/friends")
-        if (!res.ok) throw new Error("Failed to fetch friends")
+        // ② get just the friend‐IDs
+        const res = await fetch(`${API}/friends`)
+        if (!res.ok) throw new Error(`Friends fetch failed: ${res.status}`)
         const ids: number[] = await res.json()
 
+        // ③ for each ID, hit the lightweight users lookup
         const users = await Promise.all(
           ids.map(async (id) => {
-            const r = await fetch(
-              `http://localhost:8000/api/users/public/${id}`
-            )
-            if (!r.ok) throw new Error(`Failed to fetch user ${id}`)
-            return await r.json() as PublicUser
+            const r = await fetch(`${API}/api/users/public/${id}`)
+            if (!r.ok) throw new Error(`User ${id} lookup failed: ${r.status}`)
+            return (await r.json()) as PublicUser
           })
         )
+
         setFriends(users)
       } catch (e: any) {
+        console.error("SocialnessPage load error:", e)
         setError(e.message)
       }
     }
     load()
-  }, [])
+  }, [API])
 
   return (
     <div className="flex h-screen bg-[#1e2a44]">
@@ -46,7 +52,9 @@ export default function SocialnessPage() {
         <Sidebar />
       </aside>
       <main className="flex-1 ml-[130px] p-6 text-gray-800 overflow-y-auto">
-        <h1 className="text-white text-4xl font-bold mb-6 text-center">Socialness</h1>
+        <h1 className="text-white text-4xl font-bold mb-6 text-center">
+          Socialness
+        </h1>
         {error && <p className="text-red-500">Error: {error}</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {friends.map((u) => (

@@ -1,66 +1,68 @@
+# backend/routers/profile.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 from database import get_db
+from pydantic import BaseModel
+
+class PublicProfile(BaseModel):
+    user: dict
+    badges: dict
+    stats: dict
+    sightings: list[dict]
 
 router = APIRouter()
 
-@router.get("/public/{user_id}")
+@router.get("/public/{user_id}", response_model=PublicProfile)
 def get_public_profile(user_id: int, db: Session = Depends(get_db)):
-    # 1) basic user info
-    row = db.execute(text("""
-        SELECT user_id, full_name, about_me, profile_pic
-        FROM profile.users
-        WHERE user_id = :uid
+    # 1) drive off profile.security, left-join into profile.users
+    user_row = db.execute(text("""
+        SELECT 
+          s.user_id,
+          COALESCE(u.full_name, 'User ' || s.user_id::text) AS full_name,
+          COALESCE(u.about_me, '')              AS about_me,
+          u.profile_pic
+        FROM profile.security AS s
+        LEFT JOIN profile.users   AS u
+          ON s.user_id = u.user_id
+        WHERE s.user_id = :uid
     """), {"uid": user_id}).fetchone()
-    if not row:
+
+    if not user_row:
+        # truly no such user even in security
         raise HTTPException(404, "User not found")
-    user = dict(row._mapping)
 
-    # 2) badges (default all false if missing)
-    badge_row = db.execute(text("""
-        SELECT *
-        FROM profile.user_badges_real
+    # 2) badges
+    badges_row = db.execute(text("""
+        SELECT * FROM profile.user_badges_real
         WHERE user_id = :uid
     """), {"uid": user_id}).fetchone()
-    badge_defaults = {
-      "bigfoot_amateur": False,
-      "lets_be_friends": False,
-      "elite_hunter": False,
-      "socialite": False,
-      "diversify": False,
-      "well_traveled": False,
-      "hallucinator": False,
-      "camera_ready": False,
-      "dragon_rider": False
-    }
-    badges = badge_defaults if not badge_row else dict(badge_row._mapping)
+    badges = dict(badges_row._mapping) if badges_row else {}
 
-    # 3) stats (empty if missing)
+    # 3) stats
     stats_row = db.execute(text("""
-        SELECT *
-        FROM profile.user_stats
+        SELECT * FROM profile.user_stats
         WHERE user_id = :uid
     """), {"uid": user_id}).fetchone()
-    stats = {} if not stats_row else dict(stats_row._mapping)
+    stats = dict(stats_row._mapping) if stats_row else {}
 
-    # 4) their sightings
-    sight_rows = db.execute(text("""
+    # 4) sightings
+    rows = db.execute(text("""
         SELECT
           sighting_id,
           creature_id,
-          location_name AS location,
           description_short AS content,
-          created_at    AS time_posted
+          sighting_date      AS time_posted,
+          location_name      AS location
         FROM info.sightings_preview
         WHERE user_id = :uid
-        ORDER BY created_at DESC
+        ORDER BY sighting_date DESC
     """), {"uid": user_id}).fetchall()
-    sightings = [dict(r._mapping) for r in sight_rows]
+    sightings = [dict(r._mapping) for r in rows]
 
     return {
-      "user": user,
-      "badges": badges,
-      "stats": stats,
-      "sightings": sightings
+        "user": dict(user_row._mapping),
+        "badges": badges,
+        "stats": stats,
+        "sightings": sightings
     }
