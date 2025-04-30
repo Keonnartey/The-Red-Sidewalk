@@ -3,20 +3,10 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  ThumbsDown,
-  ThumbsUp,
-  Send,
-  Flag,
-  UserPlus,
-  UserMinus,
-} from "lucide-react"
-import {
-  BigfootIcon,
-  GhostIcon,
-  DragonIcon,
-  AlienIcon,
-} from "@/components/creature-icons"
+
+import { ThumbsDown, ThumbsUp, Send, Flag } from "lucide-react"
+import { BigfootIcon, GhostIcon, DragonIcon, AlienIcon, VampireIcon } from "@/components/creature-icons"
+
 import FlagModal from "@/components/flag-modal"
 
 interface Comment {
@@ -52,6 +42,8 @@ function getCreatureIcon(creature: string, size = 20) {
       return <DragonIcon color="#f74301" size={size} />
     case "alien":
       return <AlienIcon color="#03ff00" size={size} />
+    case "vampire":
+      return <VampireIcon color="8B0000" size={size} />
     default:
       return null
   }
