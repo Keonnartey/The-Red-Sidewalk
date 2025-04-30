@@ -5,6 +5,7 @@ import {
   GhostIcon,
   DragonIcon,
   AlienIcon,
+  VampireIcon,
 } from "@/components/creature-icons"
 import { Star, StarHalf, StarOff } from "lucide-react"
 
@@ -63,8 +64,8 @@ function getCreatureIcon(name: string, size = 20) {
       return <DragonIcon size={size} />
     case "alien":
       return <AlienIcon size={size} />
-    // case "vampire":
-    //   return <VampireIcon size={size} />
+    case "vampire":
+      return <VampireIcon size={size} />
     default:
       return null
   }
