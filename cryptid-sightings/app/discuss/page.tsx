@@ -49,14 +49,18 @@ export default function DiscussPage() {
   const [locationParts, setLocationParts] = useState<string[]>([])
 
   // 0️⃣ grab the logged-in user from sessionStorage
-  useEffect(() => {
+   useEffect(() => {
     const raw = sessionStorage.getItem("user")
     if (raw) {
       try {
         const u = JSON.parse(raw)
-        if (typeof u.id === "number") {
-          setCurrentUserId(u.id)
-        }
+        // ← EDITED: try several fields until we find a numeric ID
+        const id =
+          (typeof u.id === "number" && u.id) ||
+          (typeof u.user_id === "number" && u.user_id) ||
+          (u.user && typeof u.user.id === "number" && u.user.id) ||
+          null
+        setCurrentUserId(id)
       } catch {
         // ignore
       }
@@ -104,6 +108,9 @@ export default function DiscussPage() {
 
   // 🔃 Toggle friend / unfriend
   async function handleToggleFriend(userId: number) {
+    // ← EDITED: don’t even try to friend yourself
+    if (currentUserId !== null && userId === currentUserId) return
+
     const res = await fetch(`http://localhost:8000/friends/${userId}`, {
       method: "POST",
     })
@@ -313,7 +320,7 @@ export default function DiscussPage() {
                 disableUpvote={upvotedPosts.has(p.post_id)}
                 disableDownvote={downvotedPosts.has(p.post_id)}
                 isFriend={friends.has(p.user_id)}
-                canToggleFriend={p.user_id !== currentUserId}
+                canToggleFriend={currentUserId !== null && p.user_id !== currentUserId}
                 onToggleFriend={() => handleToggleFriend(p.user_id)}
                 imageClassName="max-w-sm w-full h-auto object-cover rounded-lg shadow-lg mx-auto"
               />
