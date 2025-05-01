@@ -1,5 +1,3 @@
-# backend/routers/discuss.py
-
 import os
 import requests
 from typing import Optional, Dict, Any, List
@@ -154,6 +152,10 @@ def add_comment(
     """
     Add a comment without touching upvote/downvote counts.
     """
+    user_id = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(400, detail="Missing user_id in request body")
+
     stmt = text("""
         INSERT INTO social.interactions (
             comment_id, sighting_id, user_id, comment
@@ -167,12 +169,13 @@ def add_comment(
     """)
     db.execute(stmt, {
         "post_id": post_id,
-        "user_id": 1,             # test user
+        "user_id": user_id,
         "comment": payload["comment"]
     })
 
     db.commit()
     return {"status": "success", "message": "Comment added"}
+
 
 @router.post("/posts/{post_id}/upvote")
 def upvote_post(
@@ -182,9 +185,11 @@ def upvote_post(
 ):
     """
     Allow a user to like a post exactly once.
-    For testing we still assume user_id = 1.
     """
-    user_id = 1
+    user_id = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(400, detail="Missing user_id in request body")
+
     # 1) Has this user already upvoted?
     check = db.execute(text("""
         SELECT 1
@@ -199,7 +204,6 @@ def upvote_post(
 
     # 2) Not yet upvoted: insert or update
     inc = payload.get("amount", 1)
-    # First try to update an existing row (if user has downvoted before, for example)
     result = db.execute(text("""
         UPDATE info.sightings_full
         SET upvote_count = upvote_count + :inc
@@ -208,7 +212,6 @@ def upvote_post(
     """), {"inc": inc, "post_id": post_id, "user_id": user_id})
 
     if result.rowcount == 0:
-        # no row existed: insert a fresh one
         db.execute(text("""
             INSERT INTO info.sightings_full (
                 sighting_id, user_id, upvote_count, downvote_count
@@ -221,21 +224,32 @@ def upvote_post(
     return {"status": "success", "message": "Post upvoted"}
 
 
-
 @router.post("/posts/{post_id}/downvote")
 def downvote_post(
     post_id: int,
     payload: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
+    """
+    Allow a user to downvote a post once.
+    """
     increment = payload.get("amount", 1)
+    user_id = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(400, detail="Missing user_id in request body")
+
     update_stmt = text("""
         UPDATE info.sightings_full
         SET downvote_count = downvote_count + :increment
         WHERE sighting_id = :sighting_id
-          AND user_id     = 1
+          AND user_id     = :user_id
     """)
-    result = db.execute(update_stmt, {"increment": increment, "sighting_id": post_id})
+    result = db.execute(update_stmt, {
+        "increment": increment,
+        "sighting_id": post_id,
+        "user_id": user_id
+    })
+
     if result.rowcount == 0:
         insert_stmt = text("""
             INSERT INTO info.sightings_full (
@@ -243,12 +257,16 @@ def downvote_post(
             )
             VALUES (
                 :sighting_id,
-                1,
+                :user_id,
                 0,
                 :downvote_count
             )
         """)
-        db.execute(insert_stmt, {"sighting_id": post_id, "downvote_count": increment})
+        db.execute(insert_stmt, {
+            "sighting_id": post_id,
+            "user_id": user_id,
+            "downvote_count": increment
+        })
 
     db.commit()
     return {"status": "success", "message": "Post downvoted"}
