@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+// new imports
+import { GiFootprint, GiVampireCape } from "react-icons/gi"
+
 
 interface CreatureIconProps {
   type: "ghost" | "bigfoot" | "dragon" | "alien" | "vampire"
@@ -80,16 +83,15 @@ export function GhostIcon({ color = "Blue-ish", size = 24 }) {
   )
 }
 
-export function BigfootIcon({ color = "Blue-ish", size = 24 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2C9.5 2 7.45 3.5 7.07 5.5C6.37 5.8 5.8 6.37 5.5 7.07C3.5 7.45 2 9.5 2 12C2 14.5 3.5 16.55 5.5 16.93C5.8 17.63 6.37 18.2 7.07 18.5C7.45 20.5 9.5 22 12 22C14.5 22 16.55 20.5 16.93 18.5C17.63 18.2 18.2 17.63 18.5 16.93C20.5 16.55 22 14.5 22 12C22 9.5 20.5 7.45 18.5 7.07C18.2 6.37 17.63 5.8 16.93 5.5C16.55 3.5 14.5 2 12 2ZM12 4C13.66 4 15 5.34 15 7C15 8.66 13.66 10 12 10C10.34 10 9 8.66 9 7C9 5.34 10.34 4 12 4ZM12 14C13.66 14 15 15.34 15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17C9 15.34 10.34 14 12 14Z"
-        fill={color}
-      />
-    </svg>
-  )
+
+export function BigfootIcon({ color = "#dacfff", size = 24 }) {
+  return <GiFootprint color={color} size={size} />
 }
+
+export function VampireIcon({ color = "#dacfff", size = 24 }) {
+  return <GiVampireCape color={color} size={size} />
+}
+
 
 export function DragonIcon({ color = "Blue-ish", size = 24 }) {
   return (
@@ -107,17 +109,6 @@ export function AlienIcon({ color = "Blue-ish", size = 24 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z"
-        fill={color}
-      />
-    </svg>
-  )
-}
-
-export function VampireIcon({ color = "Blue-ish", size = 24 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2C10.34 2 9 3.34 9 5C9 6.66 10.34 8 12 8C13.66 8 15 6.66 15 5C15 3.34 13.66 2 12 2ZM12 10C10.5 10 9.04 10.9 8.46 12.21C8.1 13.11 8.39 14.21 9.32 14.69C9.75 14.94 10.19 15.17 10.64 15.38C11.38 15.73 12.12 16 12 16C11.88 16 12.62 15.73 13.36 15.38C13.81 15.17 14.25 14.94 14.68 14.69C15.61 14.21 15.9 13.11 15.54 12.21C14.96 10.9 13.5 10 12 10ZM12 18C9.5 18 7.29 17.12 6 15.98C6.03 14.39 9 13.9 12 13.9C15 13.9 17.97 14.39 18 15.98C16.71 17.12 14.5 18 12 18Z"
         fill={color}
       />
     </svg>

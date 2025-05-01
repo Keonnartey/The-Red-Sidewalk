@@ -43,7 +43,7 @@ function getCreatureIcon(creature: string, size = 20) {
     case "alien":
       return <AlienIcon color="#03ff00" size={size} />
     case "vampire":
-      return <VampireIcon color="8B0000" size={size} />
+      return <VampireIcon color="#8B0000" size={size} />
     default:
       return null
   }
@@ -174,20 +174,17 @@ export default function PostCard({
 
       {/* COMMENTS */}
       <div className="bg-gray-50 px-6 py-4 space-y-3">
-        {post.comments.length > 0 ? (
-          post.comments.map(c => (
-            <div key={c.comment_id} className="flex justify-between">
-              <span>
-                <strong>{c.username}</strong> {c.comment}
-              </span>
-              <span className="text-xs text-gray-400">
-                (+{c.upvote_count}/-{c.downvote_count})
-              </span>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-400 italic">No comments yet.</p>
-        )}
+         {post.comments.length > 0 ? (
+            post.comments.map(c => (
+              <div key={c.comment_id}>
+                <span>
+                  <strong>{c.username}</strong> {c.comment}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400 italic">No comments yet.</p>
+          )}
         <div className="flex items-center space-x-2">
           <Input
             value={commentText}
