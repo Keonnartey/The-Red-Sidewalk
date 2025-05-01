@@ -14,6 +14,12 @@ interface CreatureData {
     location: string
     date: string
   }>
+  newestSightings?: Array<{
+    id: string
+    description: string
+    location: string
+    date: string
+  }>
 }
 
 export function useCreatureSearch() {
@@ -64,16 +70,18 @@ export function useCreatureSearch() {
         setCreatureData({
           height: data.height || "Unknown",
           weight: data.weight || "Unknown",
-          locations: data.locations || "Unknown", // Fixed: was data.location
+          locations: data.locations || "Unknown",
           popularSightings: data.popularSightings || [],
+          newestSightings: data.newestSightings || [],
         })
       } catch (error) {
         console.error("Error fetching creature data:", error)
         setCreatureData({
           height: "Unknown",
           weight: "Unknown",
-          locations: "Unknown", // Fixed: was location
+          locations: "Unknown",
           popularSightings: [],
+          newestSightings: [],
         })
       }
     }
