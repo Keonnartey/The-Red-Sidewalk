@@ -364,7 +364,7 @@ class UserService:
                 # Create user_badges record
                 badges_query = text(
                     """
-                    INSERT INTO profile.user_badges (user_id)
+                    INSERT INTO profile.user_badges_real (user_id)
                     VALUES (:user_id)
                 """
                 )
