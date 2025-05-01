@@ -49,6 +49,7 @@ export default function Filter({ onClose }: FilterProps) {
     bigfoot: 2,
     dragon: 3,
     alien: 4,
+    vampire: 5
   };
 
   const [formData, setFormData] = useState({
@@ -134,6 +135,7 @@ export default function Filter({ onClose }: FilterProps) {
               <option value="bigfoot">Bigfoot</option>
               <option value="dragon">Dragon</option>
               <option value="alien">Alien</option>
+              <option value="vampire">Vampire</option>
             </select>
           </div>
           <button

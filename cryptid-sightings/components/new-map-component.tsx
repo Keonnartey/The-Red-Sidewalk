@@ -5,7 +5,8 @@ import L, { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import ReactDOMServer from "react-dom/server";
 import SightingDetailsSidebar from "./sighting-details-sidebar";
-import { GhostIcon, BigfootIcon, DragonIcon, AlienIcon } from "./creature-icons";
+
+import { GhostIcon, BigfootIcon, DragonIcon, AlienIcon, VampireIcon} from "./creature-icons";
 import { useSightings } from "@/hooks/useSightingsStore";
 
 const getCreatureDivIcon = (
@@ -36,6 +37,11 @@ const getCreatureDivIcon = (
     case "4":
       color = "#00FF00";
       iconComponent = <AlienIcon color={color} size={size} />;
+      break;
+    case "vampire":
+    case "5":
+      color = "#8B0000";
+      iconComponent = <VampireIcon color={color} size={size} />;
       break;
     default:
       iconComponent = <GhostIcon color={color} size={size} />;

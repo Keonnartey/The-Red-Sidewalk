@@ -16,6 +16,7 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")
 
 
+
 # Pydantic models
 class UserCreate(BaseModel):
     email: EmailStr
@@ -311,3 +312,36 @@ async def get_user(
         )
 
     return user
+
+class PublicUser(BaseModel):
+    user_id: int
+    full_name: str
+    profile_pic: Optional[str] = None
+
+@router.get(
+    "/public/{user_id}", 
+    response_model=PublicUser,
+    summary="Public profile lookup (no auth)",
+)
+def get_user_public(user_id: int, db: Session = Depends(get_db)):
+    """
+    Return minimal public info for any user_id:
+    - Uses profile.security as the driver table (so IDs always exist)
+    - Left-joins into profile.users if you’ve actually inserted a row there
+    - Falls back to 'User <id>' for full_name if no row in profile.users
+    """
+    stmt = text("""
+        SELECT 
+            s.user_id,
+            COALESCE(u.full_name, 'User ' || s.user_id::text) AS full_name,
+            u.profile_pic
+        FROM profile.security AS s
+        LEFT JOIN profile.users AS u
+          ON s.user_id = u.user_id
+        WHERE s.user_id = :uid
+    """)
+    row = db.execute(stmt, {"uid": user_id}).fetchone()
+    if not row:
+        # truly does not exist even in security
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return dict(row._mapping)

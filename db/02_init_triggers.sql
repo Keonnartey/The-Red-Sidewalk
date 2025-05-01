@@ -116,7 +116,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 ------------------------------------------------------------
--- Trigger on info.sightings_preview
+-- Trigger on social.ratings
 ------------------------------------------------------------
 CREATE TRIGGER trigger_update_avg_rating
 AFTER INSERT OR UPDATE ON social.ratings
@@ -194,7 +194,8 @@ BEGIN
             COALESCE(cd.total_comments, 0) * 1.5 +
             COALESCE(cd.total_clicks, 0) * 2 +
             COALESCE(sr.avg_rating, 0) * 3 +
-            COALESCE(sf.upvote_count, 0) * 1 AS score
+            COALESCE(sf.upvote_count, 0) * 1 -
+            COALESCE(sf.downvote_count, 0) * 1 AS score
         FROM info.sightings_preview sp
         LEFT JOIN agg.click_data cd ON cd.sighting_id = sp.sighting_id
         LEFT JOIN agg.sightings_ratings sr ON sr.sighting_id = sp.sighting_id
@@ -266,3 +267,271 @@ FOR EACH ROW
 EXECUTE FUNCTION trigger_update_rankings_on_upvote();
 
 
+------------------------------------------------------
+-- User profile aggs
+------------------------------------------------------
+CREATE OR REPLACE FUNCTION profile.update_user_stats(user_id_input INT)
+RETURNS void AS $$
+BEGIN
+    -- Update counts based on live data
+    INSERT INTO profile.user_stats (user_id)
+    VALUES (user_id_input)
+    ON CONFLICT (user_id) DO NOTHING;
+    UPDATE profile.user_stats
+    SET 
+        unique_creature_count = (
+            SELECT COUNT(DISTINCT sp.creature_id)
+            FROM info.sightings_preview sp
+            WHERE sp.user_id = user_id_input
+        ),
+        total_sightings_count = (
+            SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            WHERE sp.user_id = user_id_input
+        ),
+        bigfoot_count = (
+            SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Bigfoot'
+        ),
+        -- repeat for other creature types...
+        dragon_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Dragon'),
+        ghost_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Ghost'),
+        alien_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Alien'),
+        vampire_count = (SELECT COUNT(*)
+            FROM info.sightings_preview sp
+            JOIN agg.creatures c ON c.creature_id = sp.creature_id
+            WHERE sp.user_id = user_id_input AND c.creature_name = 'Vampire'),
+        total_friends = (
+            SELECT COUNT(*) 
+            FROM profile.social f
+            WHERE f.user_id = user_id_input 
+        ),
+        comments_count = (
+            SELECT COUNT(*) 
+            FROM social.interactions
+            WHERE user_id = user_id_input
+        ),
+        like_count = (
+            SELECT SUM(upvote_count)
+            FROM info.sightings_full
+            WHERE user_id = user_id_input
+            GROUP BY user_id
+        ),
+        pictures_count = (
+            SELECT COUNT(*) 
+            FROM info.sightings_imgs sf
+            JOIN info.sightings_preview sp ON sp.sighting_id = sf.sighting_id
+            WHERE sp.user_id = user_id_input
+        ),
+        locations_count = (
+            SELECT COUNT(DISTINCT location_name)
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+        ),
+        user_avg_rating = (
+            SELECT AVG(rating)
+            FROM social.ratings
+            WHERE user_id = user_id_input
+        )
+    WHERE user_id = user_id_input;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- TRIGGERS
+-- Trigger on new or updated sightings
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_sighting()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_sighting
+AFTER INSERT OR UPDATE ON info.sightings_preview
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_sighting();
+
+-- Trigger on new comments
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_comment()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_comment
+AFTER INSERT ON social.interactions
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_comment();
+
+-- Trigger on new ratings
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_rating
+AFTER INSERT OR UPDATE ON social.ratings
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_rating();
+
+-- Trigger on picture uploaded to sightings_full
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_picture()
+RETURNS TRIGGER AS $$
+DECLARE
+    uid INT;
+BEGIN
+    SELECT user_id INTO uid FROM info.sightings_preview WHERE sighting_id = NEW.sighting_id;
+    PERFORM profile.update_user_stats(uid);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_picture
+AFTER INSERT OR UPDATE OF img_id ON info.sightings_imgs
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_picture();
+
+-- Trigger on new friend connection
+CREATE OR REPLACE FUNCTION trigger_update_stats_on_friend()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM profile.update_user_stats(NEW.user_id);
+    PERFORM profile.update_user_stats(NEW.friend_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_stats_on_friend
+AFTER INSERT ON profile.social
+FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_friend();
+
+------------------------------------------------------------
+-- Function to recompute ALL badges for a given user
+------------------------------------------------------------
+CREATE OR REPLACE FUNCTION profile.update_user_badges(user_id_input INT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE profile.user_badges_real ub
+  SET
+    -- saw at least one Bigfoot?
+    bigfoot_amateur = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+        AND creature_id = (
+          SELECT creature_id
+            FROM agg.creatures
+           WHERE lower(creature_name) = 'bigfoot'
+        )
+    ),
+    -- made at least one friend?
+    lets_be_friends = (
+      SELECT COUNT(*) >= 1
+      FROM profile.social
+      WHERE user_id = user_id_input
+    ),
+    -- found every creature at least once?
+    elite_hunter = (
+      SELECT COUNT(DISTINCT creature_id)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) = (SELECT COUNT(*) FROM agg.creatures),
+    -- left at least one comment?
+    socialite = (
+      SELECT COUNT(*) >= 1
+      FROM social.interactions
+      WHERE user_id = user_id_input
+    ),
+    -- saw at least two different creature types?
+    diversify = (
+      SELECT COUNT(DISTINCT creature_id)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) >= 2,
+    -- posted sightings in ≥5 distinct locations?
+    well_traveled = (
+      SELECT COUNT(DISTINCT location_name)
+      FROM info.sightings_preview
+      WHERE user_id = user_id_input
+    ) >= 5,
+    -- given at least three 1-star ratings?
+    hallucinator = (
+      SELECT COUNT(*) >= 3
+      FROM social.ratings
+      WHERE user_id = user_id_input
+        AND rating = 1
+    ),
+    -- uploaded at least one photo?
+    camera_ready = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_imgs si
+      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+      WHERE sp.user_id = user_id_input
+    ),
+    -- uploaded a dragon selfie?
+    dragon_rider = (
+      SELECT COUNT(*) >= 1
+      FROM info.sightings_imgs si
+      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+      JOIN agg.creatures c           ON sp.creature_id = c.creature_id
+      WHERE sp.user_id = user_id_input
+        AND lower(c.creature_name) = 'dragon'
+    )
+  WHERE ub.user_id = user_id_input;
+END;
+$$ LANGUAGE plpgsql;
+
+
+------------------------------------------------------------
+-- Triggers to fire badge recalculation
+------------------------------------------------------------
+-- Whenever someone logs a new sighting:
+DROP TRIGGER IF EXISTS trg_badges_on_sighting ON info.sightings_preview;
+CREATE TRIGGER trg_badges_on_sighting
+  AFTER INSERT ON info.sightings_preview
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone adds a friend:
+DROP TRIGGER IF EXISTS trg_badges_on_friend ON profile.social;
+CREATE TRIGGER trg_badges_on_friend
+  AFTER INSERT ON profile.social
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone leaves a comment:
+DROP TRIGGER IF EXISTS trg_badges_on_comment ON social.interactions;
+CREATE TRIGGER trg_badges_on_comment
+  AFTER INSERT ON social.interactions
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone rates a sighting:
+DROP TRIGGER IF EXISTS trg_badges_on_rating ON social.ratings;
+CREATE TRIGGER trg_badges_on_rating
+  AFTER INSERT OR UPDATE ON social.ratings
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+
+-- Whenever someone uploads a photo:
+DROP TRIGGER IF EXISTS trg_badges_on_photo ON info.sightings_imgs;
+CREATE TRIGGER trg_badges_on_photo
+  AFTER INSERT ON info.sightings_imgs
+  FOR EACH ROW
+EXECUTE FUNCTION profile.update_user_badges(
+    (SELECT user_id FROM info.sightings_preview WHERE sighting_id = NEW.sighting_id)
+);

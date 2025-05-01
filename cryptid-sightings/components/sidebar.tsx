@@ -7,6 +7,7 @@ import {
   Users,
   BookOpen,
   User,
+  UserPlus,
   MapPinPlus,
   MapPinned,
 } from "lucide-react";
@@ -58,6 +59,11 @@ export default function Sidebar() {
   const handleCloseGuestModal = () => {
     setShowGuestModal(false);
   };
+  const linkClass = (path: string) =>
+    `w-[80px] h-[80px] rounded-lg flex items-center justify-center
+     ${pathname === path ? "bg-[#dacfff]" : "bg-white"}`
+
+  const iconColor = "text-[#1e1d4a] w-10 h-10"
 
   return (
     <>
@@ -106,14 +112,25 @@ export default function Sidebar() {
           <Users className="w-10 h-10 text-[#1e1d4a]" />
         </Link>
 
-        <Link
-          href="/creatures"
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
-            pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <BookOpen className="w-10 h-10 text-[#1e1d4a]" />
-        </Link>
+            {/* Add the Socialness link here */}
+      <Link
+        href="/socialness"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/socialness" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <UserPlus className="w-10 h-10 text-[#1e1d4a]" />
+      </Link>
+
+
+      <Link
+        href="/creatures"
+        className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
+          pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
+        }`}
+      >
+        <BookOpen className="w-10 h-10 text-[#1e1d4a]" />
+      </Link>
 
         <Link
           href="/profile"

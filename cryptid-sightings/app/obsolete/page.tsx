@@ -9,6 +9,7 @@ import {
   BigfootIcon,
   DragonIcon,
   AlienIcon,
+  VampireIcon,
   SunIcon,
   CloudIcon,
   SnowflakeIcon,

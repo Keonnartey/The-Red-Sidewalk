@@ -81,6 +81,24 @@ CREATE TABLE IF NOT EXISTS social.ratings (
 );
 
 ------------------------------------------------------------
+-- Content Flags Table (Polymorphic design)
+------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS social.content_flags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_id INT NOT NULL,
+    content_type VARCHAR(255) NOT NULL,
+    flagged_by_user_id INT NOT NULL,
+    reason_code VARCHAR(255) NOT NULL,
+    custom_reason TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    reviewed_by_admin_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (flagged_by_user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (reviewed_by_admin_id) REFERENCES profile.security(user_id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+);
+
+------------------------------------------------------------
 -- Sightings_Full Table 
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS info.sightings_full (
@@ -122,21 +140,17 @@ CREATE TABLE IF NOT EXISTS profile.social (
 ------------------------------------------------------------
 -- User Badges Table (Fixed Name + Primary Key)
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS profile.user_badges (
+CREATE TABLE IF NOT EXISTS profile.user_badges_real (
     user_id INT PRIMARY KEY,
-    unique_creature_count INT DEFAULT 0,
-    total_sightings_count INT DEFAULT 0,
-    bigfoot_count INT DEFAULT 0, 
-    dragon_count INT DEFAULT 0,
-    ghost_count INT DEFAULT 0,
-    alien_count INT DEFAULT 0,
-    vampire_count INT DEFAULT 0,
-    total_friends_count INT DEFAULT 0,
-    comments_count INT DEFAULT 0,
-    like_count INT DEFAULT 0,
-    pictures_count INT DEFAULT 0,
-    locations_count INT DEFAULT 0,
-    user_avg_rating FLOAT DEFAULT 0,
+    bigfoot_amateur BOOLEAN DEFAULT FALSE,
+    lets_be_friends BOOLEAN DEFAULT FALSE,
+    elite_hunter BOOLEAN DEFAULT FALSE,
+    socialite BOOLEAN DEFAULT FALSE,
+    diversify BOOLEAN DEFAULT FALSE,
+    well_traveled BOOLEAN DEFAULT FALSE,
+    hallucinator BOOLEAN DEFAULT FALSE,
+    camera_ready BOOLEAN DEFAULT FALSE,
+    dragon_rider BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -169,6 +183,9 @@ CREATE TABLE IF NOT EXISTS profile.users (
     username VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR NOT NULL,
     about_me TEXT,
+    hometown_city VARCHAR(100),
+    hometown_state VARCHAR(50),
+    hometown_country VARCHAR(50),
     birthday DATE, 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
     profile_pic VARCHAR,
@@ -219,6 +236,5 @@ CREATE TABLE IF NOT EXISTS agg.click_data (
     total_comments INT DEFAULT 0,
     FOREIGN KEY (sighting_id) REFERENCES info.sightings_preview(sighting_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
-
 
 COMMIT;

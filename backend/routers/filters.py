@@ -20,7 +20,7 @@ def get_selected_creature(
     """
     try:
         # Validate creature_id if needed
-        valid_creature_ids = [1, 2, 3, 4]  # Match your creature type mapping
+        valid_creature_ids = [1, 2, 3, 4, 5]  # Match your creature type mapping
         if creature_id not in valid_creature_ids:
             raise HTTPException(
                 status_code=400, 

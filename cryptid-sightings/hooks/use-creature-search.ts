@@ -8,6 +8,12 @@ interface CreatureData {
   weight: string
   locations?: string
   lore?: string
+  popularSightings?: Array<{
+    id: string
+    description: string
+    location: string
+    date: string
+  }>
 }
 
 export function useCreatureSearch() {
@@ -54,16 +60,20 @@ export function useCreatureSearch() {
       try {
         const response = await fetch(`http://localhost:8000/lore/${selectedCreature.toLowerCase()}`)
         const data = await response.json()
+        console.log("API Response:", data) // Add this to debug
         setCreatureData({
           height: data.height || "Unknown",
           weight: data.weight || "Unknown",
-          // You can add more fields here as needed
+          locations: data.locations || "Unknown", // Fixed: was data.location
+          popularSightings: data.popularSightings || [],
         })
       } catch (error) {
         console.error("Error fetching creature data:", error)
         setCreatureData({
           height: "Unknown",
           weight: "Unknown",
+          locations: "Unknown", // Fixed: was location
+          popularSightings: [],
         })
       }
     }

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 
 interface CreatureIconProps {
-  type: "ghost" | "bigfoot" | "dragon" | "alien"
+  type: "ghost" | "bigfoot" | "dragon" | "alien" | "vampire"
   position: { x: number; y: number }
   color?: string
   size?: number
@@ -37,6 +37,7 @@ export default function CreatureIcon({ type, position, color = "#dacfff", size =
         {type === "bigfoot" && <BigfootIcon color={color} size={size} />}
         {type === "dragon" && <DragonIcon color={color} size={size} />}
         {type === "alien" && <AlienIcon color={color} size={size} />}
+        {type === "vampire" && <VampireIcon color={color} size={size} />}
       </motion.div>
 
       {showDetails && details && (
@@ -106,6 +107,17 @@ export function AlienIcon({ color = "Blue-ish", size = 24 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z"
+        fill={color}
+      />
+    </svg>
+  )
+}
+
+export function VampireIcon({ color = "Blue-ish", size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2C10.34 2 9 3.34 9 5C9 6.66 10.34 8 12 8C13.66 8 15 6.66 15 5C15 3.34 13.66 2 12 2ZM12 10C10.5 10 9.04 10.9 8.46 12.21C8.1 13.11 8.39 14.21 9.32 14.69C9.75 14.94 10.19 15.17 10.64 15.38C11.38 15.73 12.12 16 12 16C11.88 16 12.62 15.73 13.36 15.38C13.81 15.17 14.25 14.94 14.68 14.69C15.61 14.21 15.9 13.11 15.54 12.21C14.96 10.9 13.5 10 12 10ZM12 18C9.5 18 7.29 17.12 6 15.98C6.03 14.39 9 13.9 12 13.9C15 13.9 17.97 14.39 18 15.98C16.71 17.12 14.5 18 12 18Z"
         fill={color}
       />
     </svg>
