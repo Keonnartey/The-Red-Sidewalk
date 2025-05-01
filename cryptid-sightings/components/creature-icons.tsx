@@ -73,7 +73,7 @@ export default function CreatureIcon({ type, position, color = "#dacfff", size =
 }
 
 // Custom Icons
-export function GhostIcon({ color = "Blue-ish", size = 24 }) {
+export function GhostIcon({ color = "#6b7280", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -85,16 +85,16 @@ export function GhostIcon({ color = "Blue-ish", size = 24 }) {
 }
 
 
-export function BigfootIcon({ color = "#dacfff", size = 24 }) {
+export function BigfootIcon({ color = "#9f512d", size = 24 }) {
   return <GiFootprint color={color} size={size} />
 }
 
-export function VampireIcon({ color = "#dacfff", size = 24 }) {
+export function VampireIcon({ color = "#8B0000", size = 24 }) {
   return <GiVampireCape color={color} size={size} />
 }
 
 
-export function DragonIcon({ color = "Blue-ish", size = 24 }) {
+export function DragonIcon({ color = "#f74301", size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
