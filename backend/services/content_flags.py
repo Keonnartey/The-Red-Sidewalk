@@ -116,3 +116,42 @@ def get_all_flags(
             }
             for row in rows
         ]
+
+def get_hidden_content_ids(db: Session):
+    sql = text("""
+        SELECT content_id
+        FROM social.content_flags
+        WHERE content_type = 'sighting'
+        GROUP BY content_id
+        HAVING COUNT(*) >= 3
+    """)
+    result = db.execute(sql)
+    rows = result.fetchall()
+    return [row.content_id for row in rows]
+
+def get_flagged_sightings_for_admin(db: Session):
+    sql = text("""
+        SELECT 
+            cf.content_id,
+            s.location_name,
+            s.description_short,
+            COUNT(cf.content_id) AS flag_count
+        FROM social.content_flags cf
+        JOIN info.sightings_preview s
+            ON cf.content_id = s.sighting_id
+        WHERE cf.content_type = 'sighting'
+        GROUP BY cf.content_id, s.location_name, s.description_short
+        HAVING COUNT(cf.content_id) >= 3
+        ORDER BY flag_count DESC
+    """)
+    result = db.execute(sql).fetchall()
+
+    return [
+        {
+            "sighting_id": row.content_id,
+            "location_name": row.location_name,
+            "description": row.description_short,
+            "flag_count": row.flag_count
+        }
+        for row in result
+    ]

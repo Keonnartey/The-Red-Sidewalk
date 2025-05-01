@@ -58,3 +58,13 @@ def get_all_flags(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/flags/admin")
+def get_flagged_sightings_for_admin(db: Session = Depends(get_db)):
+    """
+    Admin-only: Get all sightings that have been flagged 3+ times
+    """
+    try:
+        return content_flags_service.get_flagged_sightings_for_admin(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
