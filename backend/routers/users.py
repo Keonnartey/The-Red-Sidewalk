@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, EmailStr, Field
-from datetime import timedelta
+from datetime import timedelta, date
 import jwt
 from jwt.exceptions import PyJWTError
 from sqlalchemy.orm import Session
@@ -11,10 +11,11 @@ from sqlalchemy import text
 from services.users import UserService
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from database import get_db
+from pydantic import validator
+import os
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")
-
 
 
 # Pydantic models
@@ -23,9 +24,32 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8)
     first_name: str
     last_name: str
-    username: str
-    security_question: Optional[str] = None
-    security_answer: Optional[str] = None
+    username: str = Field(..., min_length=3, max_length=50)
+    security_question: str  # Changed to required
+    security_answer: str  # Changed to required
+    about_me: Optional[str] = None
+    birthday: Optional[date] = None
+    hometown_city: Optional[str] = None
+    hometown_state: Optional[str] = None
+    hometown_country: Optional[str] = None
+
+    @validator("username")
+    def validate_username(cls, v):
+        if not all(c.isalnum() or c == "_" for c in v):
+            raise ValueError(
+                "Username must contain only letters, numbers, and underscores"
+            )
+        return v
+
+    @validator("birthday")
+    def validate_birthday(cls, v):
+        if v is not None:
+            # Ensure user is at least 13 years old
+            today = date.today()
+            age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+            if age < 13:
+                raise ValueError("User must be at least 13 years old")
+        return v
 
 
 class UserResponse(BaseModel):
@@ -136,6 +160,13 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
             )
 
+        # Ensure security question and answer are provided
+        if not user_data.security_question or not user_data.security_answer:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Security question and answer are required",
+            )
+
         # Create new user
         new_user = UserService.create_user(db, user_data.dict())
         return new_user
@@ -152,14 +183,22 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/profile")
 async def create_user_profile(
     user_id: int = Form(...),
-    full_name: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
     about_me: Optional[str] = Form(None),
     birthday: Optional[str] = Form(None),
+    hometown_city: Optional[str] = Form(None),
+    hometown_state: Optional[str] = Form(None),
+    hometown_country: Optional[str] = Form(None),
     profile_pic: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
     """Create or update user profile"""
     try:
+        print(f"Profile update request for user_id: {user_id}")
+        if profile_pic:
+            print(f"Profile picture included: {profile_pic.filename}")
+
         # Check if user exists
         user = UserService.get_user_by_id(db, user_id)
         if not user:
@@ -168,22 +207,38 @@ async def create_user_profile(
         # Prepare profile data
         profile_data = {
             "user_id": user_id,
-            "full_name": full_name,
+            "first_name": first_name,
+            "last_name": last_name,
+            # Remove full_name as it's generated automatically
         }
 
-        if about_me:
+        if about_me is not None:  # Use is not None to allow empty string
             profile_data["about_me"] = about_me
 
         if birthday:
             profile_data["birthday"] = birthday
 
+        # Add hometown fields
+        if hometown_city:
+            profile_data["hometown_city"] = hometown_city
+
+        if hometown_state:
+            profile_data["hometown_state"] = hometown_state
+
+        if hometown_country:
+            profile_data["hometown_country"] = hometown_country
+
         # Handle profile picture upload
-        if profile_pic:
+        if profile_pic and profile_pic.filename:
+            print(f"Processing profile picture: {profile_pic.filename}")
             from utils.file_utils import save_profile_picture
 
             profile_pic_path = save_profile_picture(profile_pic)
             if profile_pic_path:
                 profile_data["profile_pic"] = profile_pic_path
+                print(f"Profile picture path saved: {profile_pic_path}")
+            else:
+                print("Failed to save profile picture")
 
         # Check if profile already exists
         check_profile_query = text(
@@ -198,21 +253,20 @@ async def create_user_profile(
             update_fields = []
             update_params = {"user_id": user_id}
 
-            if full_name:
-                update_fields.append("full_name = :full_name")
-                update_params["full_name"] = full_name
-
-            if about_me:
-                update_fields.append("about_me = :about_me")
-                update_params["about_me"] = about_me
-
-            if birthday:
-                update_fields.append("birthday = :birthday")
-                update_params["birthday"] = birthday
-
-            if profile_pic:
-                update_fields.append("profile_pic = :profile_pic")
-                update_params["profile_pic"] = profile_data["profile_pic"]
+            for field in [
+                "first_name",
+                "last_name",
+                # Remove full_name from this list
+                "about_me",
+                "birthday",
+                "hometown_city",
+                "hometown_state",
+                "hometown_country",
+                "profile_pic",
+            ]:
+                if field in profile_data:
+                    update_fields.append(f"{field} = :{field}")
+                    update_params[field] = profile_data[field]
 
             if update_fields:
                 update_query = text(
@@ -220,7 +274,8 @@ async def create_user_profile(
                     UPDATE profile.users 
                     SET {", ".join(update_fields)}
                     WHERE user_id = :user_id
-                    RETURNING user_id, full_name, about_me, birthday, profile_pic
+                    RETURNING user_id, first_name, last_name, about_me, birthday, profile_pic, 
+                              hometown_city, hometown_state, hometown_country
                 """
                 )
 
@@ -234,32 +289,23 @@ async def create_user_profile(
 
                 return profile_result
         else:
-            # Create new profile
-            fields = ["user_id", "full_name"]
-            values = [":user_id", ":full_name"]
-            params = {"user_id": user_id, "full_name": full_name}
+            # Create new profile with all fields
+            fields = []
+            values = []
+            params = {}
 
-            if about_me:
-                fields.append("about_me")
-                values.append(":about_me")
-                params["about_me"] = about_me
-
-            if birthday:
-                fields.append("birthday")
-                values.append(":birthday")
-                params["birthday"] = birthday
-
-            if profile_pic:
-                fields.append("profile_pic")
-                values.append(":profile_pic")
-                params["profile_pic"] = profile_data["profile_pic"]
+            for field, value in profile_data.items():
+                fields.append(field)
+                values.append(f":{field}")
+                params[field] = value
 
             insert_query = text(
                 f"""
                 INSERT INTO profile.users 
                 ({", ".join(fields)}) 
                 VALUES ({", ".join(values)})
-                RETURNING user_id, full_name, about_me, birthday, profile_pic
+                RETURNING user_id, first_name, last_name, about_me, birthday, profile_pic,
+                          hometown_city, hometown_state, hometown_country
             """
             )
 
@@ -277,6 +323,9 @@ async def create_user_profile(
         db.rollback()
         if not isinstance(e, HTTPException):
             print(f"Error in create_user_profile: {str(e)}")
+            import traceback
+
+            traceback.print_exc()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error updating profile: {str(e)}",
@@ -313,13 +362,18 @@ async def get_user(
 
     return user
 
+
 class PublicUser(BaseModel):
     user_id: int
     full_name: str
     profile_pic: Optional[str] = None
+    hometown_city: Optional[str] = None
+    hometown_state: Optional[str] = None
+    hometown_country: Optional[str] = None
+
 
 @router.get(
-    "/public/{user_id}", 
+    "/public/{user_id}",
     response_model=PublicUser,
     summary="Public profile lookup (no auth)",
 )
@@ -327,21 +381,28 @@ def get_user_public(user_id: int, db: Session = Depends(get_db)):
     """
     Return minimal public info for any user_id:
     - Uses profile.security as the driver table (so IDs always exist)
-    - Left-joins into profile.users if you’ve actually inserted a row there
+    - Left-joins into profile.users if you've actually inserted a row there
     - Falls back to 'User <id>' for full_name if no row in profile.users
     """
-    stmt = text("""
+    stmt = text(
+        """
         SELECT 
             s.user_id,
             COALESCE(u.full_name, 'User ' || s.user_id::text) AS full_name,
-            u.profile_pic
+            u.profile_pic,
+            u.hometown_city,
+            u.hometown_state, 
+            u.hometown_country
         FROM profile.security AS s
         LEFT JOIN profile.users AS u
           ON s.user_id = u.user_id
         WHERE s.user_id = :uid
-    """)
+    """
+    )
     row = db.execute(stmt, {"uid": user_id}).fetchone()
     if not row:
         # truly does not exist even in security
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     return dict(row._mapping)

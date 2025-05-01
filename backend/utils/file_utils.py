@@ -1,64 +1,59 @@
+# Updated utils/file_utils.py
 import os
 import uuid
+import logging
+from fastapi import UploadFile
 import shutil
-from fastapi import UploadFile, HTTPException, status
-from typing import Optional
-from config import PROFILE_PICS_DIR, ALLOWED_PROFILE_PIC_EXTENSIONS, MAX_UPLOAD_SIZE
+from pathlib import Path
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Define the uploads directory - ensure this directory exists
+UPLOAD_DIR = Path("static/uploads/profile_pictures")
 
 
-def save_profile_picture(profile_pic: UploadFile) -> Optional[str]:
+def save_profile_picture(profile_pic: UploadFile) -> str:
     """
-    Save a profile picture to the filesystem
-
-    Args:
-        profile_pic: FastAPI UploadFile object
-
-    Returns:
-        str: Relative path to the saved file
-
-    Raises:
-        HTTPException: If file is invalid or too large
+    Save an uploaded profile picture and return the file path
     """
+    if not profile_pic or not profile_pic.filename:
+        return None
+
     try:
-        # Check if file is empty
-        if not profile_pic.filename:
+        # Create the upload directory if it doesn't exist
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        # Get file extension while keeping the original
+        file_extension = os.path.splitext(profile_pic.filename)[1].lower()
+
+        # Validate file extension to ensure it's an image
+        valid_extensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+        if file_extension not in valid_extensions:
+            print(f"Invalid file extension: {file_extension}")
             return None
 
-        # Check file extension
-        file_ext = os.path.splitext(profile_pic.filename)[1].lower()
-        if file_ext not in ALLOWED_PROFILE_PIC_EXTENSIONS:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported file format. Allowed formats: {', '.join(ALLOWED_PROFILE_PIC_EXTENSIONS)}",
-            )
+        # Generate a unique filename to avoid conflicts
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = UPLOAD_DIR / unique_filename
 
-        # Check file size - read into memory first to check, with a size limit
-        file_contents = profile_pic.file.read(MAX_UPLOAD_SIZE + 1)
-        if len(file_contents) > MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File is too large. Maximum size: {MAX_UPLOAD_SIZE / (1024 * 1024)}MB",
-            )
+        # Log the full file system path for debugging
+        print(f"Saving file to filesystem path: {file_path.absolute()}")
+
+        # Save the file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(profile_pic.file, buffer)
 
         # Reset file pointer
         profile_pic.file.seek(0)
 
-        # Generate unique filename
-        unique_filename = f"{uuid.uuid4()}{file_ext}"
-        file_path = os.path.join(PROFILE_PICS_DIR, unique_filename)
-
-        # Save the file
-        with open(file_path, "wb") as buffer:
-            # Write the contents that we already read
-            buffer.write(file_contents)
-
-        # Return a relative path to the file for storage in the database
-        return f"/uploads/profile_pics/{unique_filename}"
+        # Important: Return the correct web-accessible path matching how you mounted static files
+        # Since you mounted both /static and /uploads, let's use the /uploads path for clarity
+        relative_path = f"/uploads/profile_pictures/{unique_filename}"
+        print(f"URL path that will be saved to database: {relative_path}")
+        return relative_path
 
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error uploading file: {str(e)}",
-        )
+        print(f"Error saving profile picture: {str(e)}")
+        return None

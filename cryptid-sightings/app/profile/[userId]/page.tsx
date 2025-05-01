@@ -242,19 +242,19 @@ export default function UserProfilePage({ params }) {
             {/* Profile Header */}
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center space-x-4">
-                {user.profile_pic ? (
-                  <img
-                    src={user.profile_pic}
-                    alt={user.full_name}
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-500 text-xl">
-                      {user.full_name ? user.full_name.charAt(0) : "U"}
-                    </span>
-                  </div>
-                )}
+                    {user.profile_pic ? (
+                      <img 
+                        src={`http://localhost:8000${user.profile_pic}`} 
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-gray-500 text-xl">
+                          {user.full_name ? user.full_name.charAt(0) : "U"}
+                        </span>
+                      </div>
+                    )}
                 <div className="flex-1">
                   <div className="flex items-center space-x-3">
                     <h2 className="text-2xl font-bold">{user.full_name}</h2>

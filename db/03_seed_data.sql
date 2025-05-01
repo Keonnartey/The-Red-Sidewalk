@@ -1,10 +1,48 @@
--- Dummy data for profile.security
-INSERT INTO profile.security (user_id, username, email, password_hash, failed_attempts, last_login) VALUES
-(1, 'user1@example.com', 'user1_bigfoothunter', '$2b$12$Wfzg1NRPWxTM3jde5GbzcunUdDL.UoyUOcTvkWPooOxeIy8pTE6uC', 0, CURRENT_TIMESTAMP),
-(2, 'user2@example.com', 'user2_bigfoothunter','hashed_password_2', 1, CURRENT_TIMESTAMP),
-(3, 'user3@example.com', 'user3_bigfoothunter','hashed_password_3', 0, CURRENT_TIMESTAMP),
-(4, 'user4@example.com', 'user4_bigfoothunter','hashed_password_4', 2, CURRENT_TIMESTAMP),
-(5, 'user5@example.com', 'user5_bigfoothunter','hashed_password_5', 0, CURRENT_TIMESTAMP);
+-- Updated seed data for profile.security
+INSERT INTO profile.security (
+    user_id, 
+    username, 
+    email, 
+    password_hash, 
+    security_question,
+    security_answer,
+    failed_attempts, 
+    last_login
+) VALUES
+(1, 'user1_bigfoothunter', 'user1@example.com', '$2b$12$Wfzg1NRPWxTM3jde5GbzcunUdDL.UoyUOcTvkWPooOxeIy8pTE6uC', 'mothers-maiden-name', '$2b$12$uh43VJy.QNpD6d6DpB/jm.igsoTBEqWw7qLOWqI9E/RhNrq7mq2Ta', 0, CURRENT_TIMESTAMP),
+(2, 'user2_bigfoothunter', 'user2@example.com', '$2b$12$9gTu8QzxfBKm5xOD/NfeR.LM.VWKGcdbh0pRPCi2PGFGbXVGVc24.', 'first-pet-name', 'hashed_answer_2', 1, CURRENT_TIMESTAMP),
+(3, 'user3_bigfoothunter', 'user3@example.com', '$2b$12$3jH1UElfYTg5qecV6QIMuOkZ4JLz82RS4r0DY8YXslZy2HREa8KW.', 'first-car-model', 'hashed_answer_3', 0, CURRENT_TIMESTAMP),
+(4, 'user4_bigfoothunter', 'user4@example.com', '$2b$12$RQlFPnGYO3SufvBIJ.J9aeiSfFMzlWwAeA2FYh1bKMR7v.G2CuR9.', 'mothers-maiden-name', 'hashed_answer_4', 2, CURRENT_TIMESTAMP),
+(5, 'user5_bigfoothunter', 'user5@example.com', '$2b$12$8C.WKpnHJODTjTRbXK.IqeGDxr3.aWObJTJl1dUFEpK1/Tj8Vt/26', 'first-pet-name', 'hashed_answer_5', 0, CURRENT_TIMESTAMP);
+
+
+-- Updated seed data for profile.users
+INSERT INTO profile.users (
+    user_id,
+    username,
+    first_name,
+    last_name,
+    about_me,
+    birthday,
+    profile_pic,
+    hometown_city, 
+    hometown_state,
+    hometown_country
+) VALUES
+(1, 'John', 'Doe','user1_bigfoothunter', 'Mothman enthusiast since 2010. I spend my weekends in West Virginia looking for unusual sightings.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg', 
+ 'Seattle', 'Washington', 'USA'),
+
+(2, 'Jane', 'Smith','user2_bigfoothunter', 'Bigfoot hunter with over 10 years of experience in the Pacific Northwest. I have documented over 20 potential sightings.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg',
+ 'Portland', 'Oregon', 'USA'),
+
+(3, 'Alex', 'Johnson', 'user3_bigfoothunter','Chupacabra tracker and cryptozoology researcher. Published author of "Hidden Creatures of North America".', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg',
+ 'San Francisco', 'California', 'USA'),
+
+(4, 'Emily', 'Davis','user4_bigfoothunter', 'Loch Ness Monster researcher with background in marine biology. I organize annual expeditions to Scotland.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg',
+ 'New York City', 'New York', 'USA'),
+
+(5, 'Chris', 'Lee', 'user5_bigfoothunter','Kraken diver and deep sea enthusiast. I document unusual ocean phenomena and have a special interest in bioluminescent creatures.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg',
+ 'Austin', 'Texas', 'USA');
 
 
 -- Dummy data for agg.creatures
@@ -234,19 +272,7 @@ INSERT INTO profile.user_badges_real (
 --(5, 5, 14, 4, 2, 1, 1, 1, 1, 6, 13, 5, 7, 4.8);
 
 -- Dummy data for profile.users
-INSERT INTO profile.users (
-    user_id,
-    username,
-    full_name,
-    about_me,
-    birthday,
-    profile_pic
-) VALUES
-(1, 'user1_bigfoothunter', 'John Doe', 'Mothman enthusiast.', '1990-05-12', 'https://dummy-s3-url.com/profile1.jpg'),
-(2, 'user2_bigfoothunter','Jane Smith', 'Bigfoot hunter.', '1985-09-23', 'https://dummy-s3-url.com/profile2.jpg'),
-(3, 'user3_bigfoothunter','Alex Johnson', 'Chupacabra tracker.', '1992-03-10', 'https://dummy-s3-url.com/profile3.jpg'),
-(4, 'user4_bigfoothunter','Emily Davis', 'Loch Ness Monster researcher.', '1988-12-05', 'https://dummy-s3-url.com/profile4.jpg'),
-(5, 'user5_bigfoothunter','Chris Lee',  'Kraken diver.', '1995-07-18', 'https://dummy-s3-url.com/profile5.jpg');
+
 
 -- Dummy data for rankings.most_popular_sightings
 --INSERT INTO rankings.most_popular_sightings (

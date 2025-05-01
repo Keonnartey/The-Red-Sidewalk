@@ -5,13 +5,17 @@ SET CONSTRAINTS ALL DEFERRED;
 -- Security Table
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS profile.security (
-    user_id INT PRIMARY KEY,
+    user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    security_question VARCHAR(50) NOT NULL, -- Stores the question identifier (e.g., 'mothers-maiden-name')
+    security_answer TEXT NOT NULL, -- Stores the hashed answer
     failed_attempts INT DEFAULT 0,
     last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    );
+-- Locations Table - For hometown location data
+
 
 ------------------------------------------------------------
 -- Creatures Table
@@ -179,17 +183,20 @@ CREATE TABLE IF NOT EXISTS profile.user_stats (
 -- Users Table (Fixed Name + Primary Key)
 ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS profile.users (
-    user_id INT PRIMARY KEY,
+    user_id INTEGER PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    full_name VARCHAR NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(200) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED,
     about_me TEXT,
-    hometown_city VARCHAR(100),
-    hometown_state VARCHAR(50),
-    hometown_country VARCHAR(50),
-    birthday DATE, 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    birthday DATE,
     profile_pic VARCHAR,
-    FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+    hometown_city VARCHAR(100),
+    hometown_state VARCHAR(100),
+    hometown_country VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE
 );
 
 ------------------------------------------------------------

@@ -308,12 +308,12 @@ class UserService:
             transaction = db.begin_nested()
 
             try:
-                # Create security entry with the generated user_id
+                # Create security entry with the generated user_id - FIX THE SQL HERE
                 security_query = text(
                     """
                     INSERT INTO profile.security 
-                    (user_id, username, email, password_hash) 
-                    VALUES (:user_id, :username, :email, :password_hash)
+                    (user_id, username, email, password_hash, security_question, security_answer) 
+                    VALUES (:user_id, :username, :email, :password_hash, :security_question, :security_answer)
                     RETURNING user_id, username, email
                 """
                 )
@@ -325,29 +325,35 @@ class UserService:
                     "password_hash": UserService.get_password_hash(
                         user_data.get("password")
                     ),
+                    "security_question": user_data.get("security_question"),
+                    "security_answer": user_data.get("security_answer"),
                 }
 
                 result = db.execute(security_query, security_params).first()
 
                 if not result:
                     raise Exception("Failed to create security record")
-
-                # Create user profile
-                users_query = text(
-                    """
-                    INSERT INTO profile.users 
-                    (user_id, username, full_name, about_me, birthday) 
-                    VALUES (:user_id, :username, :full_name, :about_me, :birthday)
-                """
-                )
-
+                # In services/users.py, in the create_user method
                 users_params = {
                     "user_id": user_id,
                     "username": user_data.get("username"),
-                    "full_name": f"{user_data.get('first_name')} {user_data.get('last_name')}",
-                    "about_me": None,
-                    "birthday": None,
+                    "first_name": user_data.get("first_name"),
+                    "last_name": user_data.get("last_name"),
+                    # Remove full_name as it's generated automatically
+                    "about_me": user_data.get("about_me"),
+                    "birthday": user_data.get("birthday"),
+                    "hometown_city": user_data.get("hometown_city"),
+                    "hometown_state": user_data.get("hometown_state"),
+                    "hometown_country": user_data.get("hometown_country"),
                 }
+
+                users_query = text(
+                    """
+                    INSERT INTO profile.users 
+                    (user_id, username, first_name, last_name, about_me, birthday, hometown_city, hometown_state, hometown_country) 
+                    VALUES (:user_id, :username, :first_name, :last_name, :about_me, :birthday, :hometown_city, :hometown_state, :hometown_country)
+                    """
+                )
 
                 db.execute(users_query, users_params)
 

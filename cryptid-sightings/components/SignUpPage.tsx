@@ -9,20 +9,22 @@ const SignUpPage: React.FC = () => {
   const router = useRouter();
   const { login } = useAuth();
   
-  const [formData, setFormData] = useState({
-    email: '',
-    username: '', // New username field
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    aboutMe: '',
-    birthday: '',
-    profilePic: null as File | null,
-    securityQuestion: 'mothers-maiden-name', // Default security question
-    securityAnswer: '',
-  });
-  
+const [formData, setFormData] = useState({
+  email: '',
+  username: '',
+  password: '',
+  confirmPassword: '',
+  firstName: '',
+  lastName: '',
+  aboutMe: '',
+  birthday: '',
+  profilePic: null as File | null,
+  securityQuestion: 'mothers-maiden-name',
+  securityAnswer: '',
+  hometownCity: '', // New field for hometown city
+  hometownState: '', // New field for hometown state
+  hometownCountry: '', // New field for hometown country
+});
   const [errors, setErrors] = useState({
     email: '',
     username: '', // New error field for username
@@ -37,9 +39,9 @@ const SignUpPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const securityQuestions = [
-    { value: 'mothers-maiden-name', label: "What was your mother's maiden name?" },
-    { value: 'first-pet-name', label: "What was your first pet's name?" },
-    { value: 'first-car-model', label: "What was your first car model?" },
+    { value: 'mothers-maiden-name', label: 'What was your mother\'s maiden name?' },
+    { value: 'first-pet-name', label: 'What was your first pet\s name?'},
+    { value: 'first-car-model', label: 'What was your first car model?' },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -167,22 +169,37 @@ const SignUpPage: React.FC = () => {
       const userId = userData.id;
       
       // Create form data for profile info
+            // Create form data for profile info
       const profileFormData = new FormData();
       profileFormData.append('user_id', userId.toString());
-      profileFormData.append('full_name', `${formData.firstName} ${formData.lastName}`);
-      
+      profileFormData.append('first_name', formData.firstName);
+      profileFormData.append('last_name', formData.lastName);
+
       if (formData.aboutMe) {
         profileFormData.append('about_me', formData.aboutMe);
       }
-      
+
       if (formData.birthday) {
         profileFormData.append('birthday', formData.birthday);
       }
-      
+
+      // Add hometown fields if provided
+      if (formData.hometownCity) {
+        profileFormData.append('hometown_city', formData.hometownCity);
+      }
+
+      if (formData.hometownState) {
+        profileFormData.append('hometown_state', formData.hometownState);
+      }
+
+      if (formData.hometownCountry) {
+        profileFormData.append('hometown_country', formData.hometownCountry);
+      }
+
       if (formData.profilePic) {
         profileFormData.append('profile_pic', formData.profilePic);
       }
-      
+            
       // Upload profile information
       const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'POST',
@@ -396,6 +413,60 @@ const SignUpPage: React.FC = () => {
                 {/* Optional Fields Section */}
                 <div className="pt-4">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Optional Information</h3>
+
+                  {/* Hometown City */}
+                  <div>
+                    <label htmlFor="hometownCity" className="text-sm font-medium text-gray-700">
+                      Hometown City
+                    </label>
+                    <input
+                      type="text"
+                      id="hometownCity"
+                      name="hometownCity"
+                      value={formData.hometownCity}
+                      onChange={handleChange}
+                      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                        errors.hometownCity ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      placeholder="Enter your hometown city"
+                    />
+                  </div>
+
+                  {/* Hometown State */}
+                  <div>
+                    <label htmlFor="hometownState" className="text-sm font-medium text-gray-700">
+                      Hometown State
+                    </label>
+                    <input
+                      type="text"
+                      id="hometownState"
+                      name="hometownState"
+                      value={formData.hometownState}
+                      onChange={handleChange}
+                      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                        errors.hometownState ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      placeholder="Enter your hometown state"
+                    />
+                  </div>
+
+                  {/* Hometown Country */}
+                  <div>
+                    <label htmlFor="hometownCountry" className="text-sm font-medium text-gray-700">
+                      Hometown Country
+                    </label>
+                    <input
+                      type="text"
+                      id="hometownCountry"
+                      name="hometownCountry"
+                      value={formData.hometownCountry}
+                      onChange={handleChange}
+                      className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                        errors.hometownCountry ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      placeholder="Enter your hometown country"
+                    />
+                  </div>
                   
                   {/* About Me */}
                   <div className="mb-4">

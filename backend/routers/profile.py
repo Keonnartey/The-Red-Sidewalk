@@ -169,3 +169,33 @@ def get_public_profile(user_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching user profile: {str(e)}",
         )
+
+
+@router.get("/test-file-access")
+async def test_file_access():
+    """Test if files can be accessed"""
+    import os
+    from pathlib import Path
+
+    # Check the directory structure
+    static_dir = Path("static")
+    uploads_dir = Path("static/uploads")
+    profile_pics_dir = Path("static/uploads/profile_pictures")
+
+    # List files in the profile pictures directory
+    pic_files = []
+    if profile_pics_dir.exists() and profile_pics_dir.is_dir():
+        pic_files = [str(f.name) for f in profile_pics_dir.iterdir() if f.is_file()]
+
+    return {
+        "cwd": os.getcwd(),
+        "static_exists": static_dir.exists(),
+        "uploads_exists": uploads_dir.exists(),
+        "profile_pics_exists": profile_pics_dir.exists(),
+        "profile_pics": pic_files,
+        "static_is_dir": static_dir.is_dir() if static_dir.exists() else False,
+        "uploads_is_dir": uploads_dir.is_dir() if uploads_dir.exists() else False,
+        "profile_pics_is_dir": (
+            profile_pics_dir.is_dir() if profile_pics_dir.exists() else False
+        ),
+    }
