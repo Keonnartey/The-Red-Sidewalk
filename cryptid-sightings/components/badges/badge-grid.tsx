@@ -1,3 +1,4 @@
+// components/badges/badge-grid.tsx
 "use client";
 
 import Image from "next/image";
@@ -31,7 +32,10 @@ export function BadgeGrid({ badges, onBadgeClick }: BadgeGridProps) {
               className="w-16 h-16"
             />
           </div>
-          <p className="text-white text-center text-sm">{badge.label}</p>
+          {/* dark text so it’s legible on white */}
+          <p className="text-gray-800 text-center text-sm font-medium">
+            {badge.label}
+          </p>
         </div>
       ))}
     </div>

@@ -8,16 +8,15 @@ interface BadgeModalProps {
 }
 
 const BADGE_REQUIREMENTS: Record<string, string> = {
-  bigfoot_amateur: "Report your first Bigfoot sighting to earn this badge!",
-  lets_be_friends: "Add a friend to your network to earn this badge!",
-  elite_hunter: "Find all 5 creatures to earn this badge!",
-  socialite: "Leave a comment on someone else's sighting to earn this badge!",
-  diversify: "Report sightings of 2 different creatures to earn this badge!",
-  well_traveled: "Find creatures in 5 different locations to earn this badge!",
-  hallucinator: "If you earn three or more 1-star ratings, you'll earn this badge!",
-  camera_ready: "Report a sighting with a photo to earn this badge!",
-  dragon_rider: "Take a selfie with a dragon to earn this badge!",
-  // Add more as needed
+  bigfoot_amateur:    "Report your first Bigfoot sighting to earn this badge!",
+  lets_be_friends:    "Add a friend to your network to earn this badge!",
+  elite_hunter:       "Find all 5 creatures to earn this badge!",
+  socialite:          "Leave a comment on someone else's sighting to earn this badge!",
+  diversify:          "Report sightings of 2 different creatures to earn this badge!",
+  well_traveled:      "Find creatures in 5 different locations to earn this badge!",
+  hallucinator:       "If you earn three or more 1-star ratings, you'll earn this badge!",
+  camera_ready:       "Report a sighting with a photo to earn this badge!",
+  dragon_rider:       "Take a selfie with a dragon to earn this badge!",
 };
 
 export function BadgeModal({ badgeKey, onClose }: BadgeModalProps) {
@@ -27,8 +26,8 @@ export function BadgeModal({ badgeKey, onClose }: BadgeModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1,   opacity: 1 }}
+        exit={{    scale: 0.95, opacity: 0 }}
         className="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6"
       >
         <button
