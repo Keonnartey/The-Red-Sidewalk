@@ -13,7 +13,6 @@ interface PublicUser {
 }
 
 export default function SocialnessPage() {
-  // ① fallback to your backend container name + port
   const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://backend:8000"
   console.log("🤖 SocialnessPage using API =", API)
 
@@ -23,12 +22,21 @@ export default function SocialnessPage() {
   useEffect(() => {
     async function load() {
       try {
-        // ② get just the friend‐IDs
-        const res = await fetch(`${API}/friends`)
+        // Get logged-in user from sessionStorage
+        const stored = sessionStorage.getItem("user")
+        const me = stored ? JSON.parse(stored) : null
+        if (!me?.id) throw new Error("Logged-in user ID not found")
+
+        // Send user ID in request headers
+        const res = await fetch(`${API}/friends`, {
+          headers: {
+            "X-User-ID": me.id.toString(),
+          },
+        })
         if (!res.ok) throw new Error(`Friends fetch failed: ${res.status}`)
         const ids: number[] = await res.json()
 
-        // ③ for each ID, hit the lightweight users lookup
+        // For each friend ID, fetch public user info
         const users = await Promise.all(
           ids.map(async (id) => {
             const r = await fetch(`${API}/api/users/public/${id}`)
@@ -43,6 +51,7 @@ export default function SocialnessPage() {
         setError(e.message)
       }
     }
+
     load()
   }, [API])
 
@@ -66,7 +75,7 @@ export default function SocialnessPage() {
               <img
                 src={u.profile_pic || "/default-avatar.png"}
                 alt={u.full_name}
-                className="w-16 h-16 rounded-full object-cover"
+                className="w-16 h-16 rounded-full object-cover" 
               />
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-[#1e1d4a]">
