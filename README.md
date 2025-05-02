@@ -1,7 +1,9 @@
 # 🦇 Cryptid Sightings
 ## Team Members: Jenny Chen, Aarya Desai, Matthew Holden, Katelyn Hucker, Keon Nartey
 
-[![Backend: FastAPI](https://img.shields.io/badge/backend-FastAPI-blue?logo=fastapi)](https://fastapi.tiangolo.com/) [![Frontend: Next.js](https://img.shields.io/badge/frontend-Next.js-black?logo=next.js)](https://nextjs.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)]
+[![Backend: FastAPI](https://img.shields.io/badge/Backend-FastAPI-blue?logo=fastapi)]
+[![Frontend: Next.js](https://img.shields.io/badge/Frontend-Next.js-black?logo=next.js)]
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)]
 
 A **community-driven** platform where enthusiasts report, discuss, and rate sightings of mythical creatures from around the world. Whether you’ve glimpsed a UFO or snapped a photo of a dragon, share your evidence and join the hunt!
 
