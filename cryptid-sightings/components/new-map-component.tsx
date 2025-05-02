@@ -68,7 +68,8 @@ const NewMapComponent = () => {
     const mapContainer = document.getElementById("map");
     if (!mapContainer || mapRef.current) return;
 
-    const map = L.map(mapContainer).setView([20, 0], 2);
+    const map = L.map(mapContainer, { zoomControl: false }).setView([20, 0], 2);
+
     mapRef.current = map;
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
@@ -116,7 +117,7 @@ const NewMapComponent = () => {
 
   return (
     <>
-      <div id="map" style={{ height: "90vh", width: "100%" }} />
+      <div id="map" style={{ height: "100vh", width: "100%" }} />
       {selectedSighting && (
         <SightingDetailsSidebar
           sighting={selectedSighting}

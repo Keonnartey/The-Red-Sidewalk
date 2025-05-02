@@ -48,7 +48,7 @@ export default function SocialnessPage() {
 
   return (
     <div className="flex h-screen bg-[#1e2a44]">
-      <aside className="fixed top-0 left-0 h-full w-[130px] bg-[#2d2a44]">
+      <aside className="fixed top-0 left-0 h-full w-[130px]">
         <Sidebar />
       </aside>
       <main className="flex-1 ml-[130px] p-6 text-gray-800 overflow-y-auto">
