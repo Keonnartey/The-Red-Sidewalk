@@ -173,7 +173,7 @@ export default function Sidebar() {
         <div className="relative group">
           <div
             onClick={() => handleProtectedPageClick("/discuss")}
-            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110 ${
               pathname === "/discuss" ? "bg-[#dacfff]" : "bg-white"
             }`}
           >
@@ -188,7 +188,7 @@ export default function Sidebar() {
         <div className="relative group">
           <div
             onClick={() => handleProtectedPageClick("/socialness")}
-            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110 ${
               pathname === "/socialness" ? "bg-[#dacfff]" : "bg-white"
             }`}
           >
@@ -203,7 +203,7 @@ export default function Sidebar() {
         <div className="relative group">
           <div
             onClick={() => handleProtectedPageClick("/creatures")}
-            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110 ${
               pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
             }`}
           >
@@ -218,7 +218,7 @@ export default function Sidebar() {
         <div className="relative group">
           <div
             onClick={() => handleProtectedPageClick("/profile")}
-            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110 ${
               pathname === "/profile" ? "bg-[#dacfff]" : "bg-white"
             }`}
           >
