@@ -8,6 +8,7 @@ import { ThumbsDown, ThumbsUp, Send, Flag, UserPlus, UserMinus } from "lucide-re
 import { BigfootIcon, GhostIcon, DragonIcon, AlienIcon, VampireIcon } from "@/components/creature-icons"
 
 import FlagModal from "@/components/flag-modal"
+import Link from "next/link";
 
 interface Comment {
   comment_id: number
@@ -97,7 +98,12 @@ export default function PostCard({
       {/* HEADER */}
       <div className="px-6 py-4 flex justify-between items-center border-b">
         <div className="flex items-center space-x-4">
-          <h2 className="font-semibold text-lg">{post.username}</h2>
+        <Link
+          href={`/profile/${post.user_id}`}
+          className="font-semibold text-lg hover:underline"
+        >
+          {post.username}
+        </Link>
           {canToggleFriend && onToggleFriend && (
             <Button
               size="sm"
