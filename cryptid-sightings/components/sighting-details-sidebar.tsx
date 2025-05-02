@@ -95,10 +95,6 @@ const SightingDetailsSidebar: React.FC<SightingDetailsSidebarProps> = ({
         <div className="font-bold text-right">{sighting.location_name}</div>
         <div>Date</div>
         <div className="font-bold text-right">{sighting.sighting_date}</div>
-        <div>Latitude</div>
-        <div className="font-bold text-right">{sighting.latitude}</div>
-        <div>Longitude</div>
-        <div className="font-bold text-right">{sighting.longitude}</div>
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
