@@ -115,7 +115,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="w-[130px] bg-[#1e1d4a] flex flex-col items-center py-4 gap-8 shrink-0">
+      <div className="fixed left-0 top-0 h-screen w-[130px] flex flex-col items-center justify-center gap-8 z-40">
         {/* Map */}
         <div className="relative group">
           <button
