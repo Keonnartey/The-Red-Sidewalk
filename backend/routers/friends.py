@@ -10,16 +10,19 @@ router = APIRouter()
 # 👤 In real life pull this from your auth layer!
 CURRENT_USER_ID = 1
 
+
 @router.get("")
 def list_friends(db: Session = Depends(get_db)):
     """
     Return a list of friend IDs for the current user.
     """
-    stmt = text("""
+    stmt = text(
+        """
         SELECT friend_id
         FROM profile.social
         WHERE user_id = :uid
-    """)
+    """
+    )
     rows = db.execute(stmt, {"uid": CURRENT_USER_ID}).fetchall()
     return [r[0] for r in rows]
 
@@ -34,28 +37,43 @@ def toggle_friend(friend_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Can't friend yourself")
 
     # Check existing relationship
-    exists = db.execute(text("""
+    exists = db.execute(
+        text(
+            """
         SELECT 1
         FROM profile.social
         WHERE user_id = :uid
           AND friend_id = :fid
-    """), {"uid": CURRENT_USER_ID, "fid": friend_id}).fetchone()
+    """
+        ),
+        {"uid": CURRENT_USER_ID, "fid": friend_id},
+    ).fetchone()
 
     if exists:
         # Unfriend
-        db.execute(text("""
+        db.execute(
+            text(
+                """
             DELETE FROM profile.social
             WHERE user_id = :uid
               AND friend_id = :fid
-        """), {"uid": CURRENT_USER_ID, "fid": friend_id})
+        """
+            ),
+            {"uid": CURRENT_USER_ID, "fid": friend_id},
+        )
         action = "removed"
     else:
         # Add friend
-        db.execute(text("""
+        db.execute(
+            text(
+                """
             INSERT INTO profile.social (user_id, friend_id)
             VALUES (:uid, :fid)
             ON CONFLICT DO NOTHING
-        """), {"uid": CURRENT_USER_ID, "fid": friend_id})
+        """
+            ),
+            {"uid": CURRENT_USER_ID, "fid": friend_id},
+        )
         action = "added"
 
     db.commit()
