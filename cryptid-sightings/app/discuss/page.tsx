@@ -153,7 +153,15 @@ export default function DiscussPage() {
   // 2️⃣ Fetch your friends with auth checking
   async function fetchFriends() {
     try {
-      const res = await authFetch("http://localhost:8000/friends");
+      const stored = sessionStorage.getItem("user");
+      const me = stored ? JSON.parse(stored) : null;
+      if (!me?.id) throw new Error("User ID not found in session");
+
+      const res = await fetch("http://localhost:8000/friends", {
+        headers: {
+          "X-User-ID": me.id.toString(),
+        },
+      });
       if (!res.ok) throw new Error("Failed to fetch friends");
       const fids: number[] = await res.json();
       setFriends(new Set(fids));
@@ -180,14 +188,23 @@ export default function DiscussPage() {
 
   // 🔃 Toggle friend / unfriend
   async function handleToggleFriend(userId: number) {
-    // ← EDITED: don't even try to friend yourself
-    if (currentUserId !== null && userId === currentUserId) return
-
+    if (currentUserId !== null && userId === currentUserId) return;
+  
     try {
-      const res = await authFetch(`http://localhost:8000/friends/${userId}`, {
+      const res = await fetch(`http://localhost:8000/friends/${userId}`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-ID": currentUserId?.toString() || "",
+        },
       });
-      if (!res.ok) return;
+  
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Friend toggle failed:", res.status, errText);
+        return;
+      }
+  
       const { action, friend_id } = await res.json();
       setFriends(prev => {
         const next = new Set(prev);
@@ -196,9 +213,10 @@ export default function DiscussPage() {
         return next;
       });
     } catch (err) {
-      console.error(err);
+      console.error("Friend toggle error:", err);
     }
   }
+  
 
   // 👍 Upvote once
   async function handleUpvotePost(postId: number) {
