@@ -42,7 +42,9 @@ def toggle_friend(friend_id: int, request: Request, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail="Can't friend yourself")
 
     # Check existing relationship
-    exists = db.execute(text("""
+    exists = db.execute(
+        text(
+            """
         SELECT 1
         FROM profile.social
         WHERE user_id = :uid
@@ -51,7 +53,9 @@ def toggle_friend(friend_id: int, request: Request, db: Session = Depends(get_db
 
     if exists:
         # Unfriend
-        db.execute(text("""
+        db.execute(
+            text(
+                """
             DELETE FROM profile.social
             WHERE user_id = :uid
               AND friend_id = :fid
@@ -59,7 +63,9 @@ def toggle_friend(friend_id: int, request: Request, db: Session = Depends(get_db
         action = "removed"
     else:
         # Add friend
-        db.execute(text("""
+        db.execute(
+            text(
+                """
             INSERT INTO profile.social (user_id, friend_id)
             VALUES (:uid, :fid)
             ON CONFLICT DO NOTHING
