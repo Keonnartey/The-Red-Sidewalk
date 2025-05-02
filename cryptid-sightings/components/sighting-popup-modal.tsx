@@ -37,10 +37,22 @@ const SightingPopupModal: React.FC<SightingPopupModalProps> = ({ data, onClose }
   const { preview, images } = data;
   const [averageRating, setAverageRating] = useState(preview.avg_rating ?? 0);
   const [ratingCount, setRatingCount] = useState(preview.rating_count ?? 0);
+
+  const [uploaderName, setUploaderName] = useState<string | null>(null);
   
 
   useEffect(() => {
     setMounted(true);
+
+    fetch(`http://localhost:8000/api/users/public/${preview.user_id}`)
+      .then((res) => res.json())
+      .then((user) => {
+        setUploaderName(user.full_name || `User ${preview.user_id}`);
+      })
+      .catch((err) => {
+        console.error("Failed to load uploader name", err);
+        setUploaderName(`User ${preview.user_id}`);
+      });
 
     // Fetch user rating if logged in
     if (userId) {
@@ -137,6 +149,16 @@ const SightingPopupModal: React.FC<SightingPopupModalProps> = ({ data, onClose }
               ({preview.latitude}, {preview.longitude})
             </span>
           </p>
+          <p className="text-sm text-gray-600">
+            Uploaded by:{" "}
+            <a
+              href={`/profile/${preview.user_id}`}
+              className="text-blue-600 hover:underline font-medium"
+            >
+              {uploaderName || `User ${preview.user_id}`}
+            </a>
+          </p>
+
         </div>
 
         <div className="mb-4">
