@@ -1,6 +1,8 @@
 # 🦇 Cryptid Sightings
 ## Team Members: Jenny Chen, Aarya Desai, Matthew Holden, Katelyn Hucker, Keon Nartey
 
+## Youtube Video: https://youtu.be/VTUFavd2ZYs
+
 ![Backend: FastAPI](https://img.shields.io/badge/Backend-FastAPI-blue?logo=fastapi)
 ![Frontend: Next.js](https://img.shields.io/badge/Frontend-Next.js-black?logo=next.js)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
