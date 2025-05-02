@@ -31,7 +31,7 @@ def list_friends(request: Request, db: Session = Depends(get_db)):
     return [r[0] for r in rows]
 
 @router.post("/{friend_id}")
-def toggle_friend(friend_id: int, request: Request, db: Session = Depends(get_db)):
+def toggle_friend(friend_id: int, request: Request, db: Session = Depends(get_db)): 
     """
     Add or remove a friend. Cannot add yourself.
     If already friends, this will unfriend; otherwise it will add.
