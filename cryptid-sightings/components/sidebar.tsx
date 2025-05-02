@@ -116,84 +116,121 @@ export default function Sidebar() {
   return (
     <>
       <div className="w-[130px] bg-[#1e1d4a] flex flex-col items-center py-4 gap-8 shrink-0">
-        {/* Map button - accessible to everyone */}
-        <button
-          onClick={() => {
-            setShowFilter(false);
-            setShowReportForm(false);
-            handleMapClick();
-          }}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center ${
-            pathname === "/map" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <MapPinned className="w-10 h-10 text-[#1e1d4a]" />
-        </button>
-
-        {/* Filter button - accessible to everyone */}
-        <button
-          onClick={() => {
-            console.log("🔍 Opening filter modal from sidebar");
-            setShowReportForm(false);
-            handleFilterClick();
-          }}
-          className="w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition"
-        >
-          <Filter className="w-10 h-10 text-[#1e1d4a]" />
-        </button>
-
-        {/* Report button - shows modal for guests */}
-        <button
-          onClick={() => {
-            console.log("🔍 Opening report modal from sidebar");
-            setShowFilter(false);
-            handleReportClick();
-          }}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition`}
-        >
-          <MapPinPlus className="w-10 h-10 text-[#1e1d4a]" />
-        </button>
-
-        {/* Discuss - protected */}
-        <div 
-          onClick={() => handleProtectedPageClick("/discuss")}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer ${
-            pathname === "/discuss" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <Users className="w-10 h-10 text-[#1e1d4a]" />
+        {/* Map */}
+        <div className="relative group">
+          <button
+            onClick={() => {
+              setShowFilter(false);
+              setShowReportForm(false);
+              handleMapClick();
+            }}
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center transition hover:brightness-110 ${
+              pathname === "/map" ? "bg-[#dacfff]" : "bg-white"
+            }`}
+          >
+            <MapPinned className="w-10 h-10 text-[#1e1d4a]" />
+          </button>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Show Map
+          </span>
         </div>
 
-        {/* Socialness - protected */}
-        <div
-          onClick={() => handleProtectedPageClick("/socialness")}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer ${
-            pathname === "/socialness" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <UserPlus className="w-10 h-10 text-[#1e1d4a]" />
+        {/* Filter */}
+        <div className="relative group">
+          <button
+            onClick={() => {
+              console.log("🔍 Opening filter modal from sidebar");
+              setShowReportForm(false);
+              handleFilterClick();
+            }}
+            className="w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110"
+          >
+            <Filter className="w-10 h-10 text-[#1e1d4a]" />
+          </button>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Filter Sightings
+          </span>
         </div>
 
-        {/* Creatures - protected */}
-        <div
-          onClick={() => handleProtectedPageClick("/creatures")}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer ${
-            pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <BookOpen className="w-10 h-10 text-[#1e1d4a]" />
+        {/* Report */}
+        <div className="relative group">
+          <button
+            onClick={() => {
+              console.log("📍 Opening report modal from sidebar");
+              setShowFilter(false);
+              handleReportClick();
+            }}
+            className="w-[80px] h-[80px] rounded-lg flex items-center justify-center bg-white hover:bg-[#dacfff] transition hover:brightness-110"
+          >
+            <MapPinPlus className="w-10 h-10 text-[#1e1d4a]" />
+          </button>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Report Sighting
+          </span>
         </div>
 
-        {/* Profile - protected */}
-        <div
-          onClick={() => handleProtectedPageClick("/profile")}
-          className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer ${
-            pathname === "/profile" ? "bg-[#dacfff]" : "bg-white"
-          }`}
-        >
-          <User className="w-10 h-10 text-[#1e1d4a]" />
+        {/* Discuss */}
+        <div className="relative group">
+          <div
+            onClick={() => handleProtectedPageClick("/discuss")}
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+              pathname === "/discuss" ? "bg-[#dacfff]" : "bg-white"
+            }`}
+          >
+            <Users className="w-10 h-10 text-[#1e1d4a]" />
+          </div>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Discussion Page
+          </span>
+        </div>
+
+        {/* Socialness */}
+        <div className="relative group">
+          <div
+            onClick={() => handleProtectedPageClick("/socialness")}
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+              pathname === "/socialness" ? "bg-[#dacfff]" : "bg-white"
+            }`}
+          >
+            <UserPlus className="w-10 h-10 text-[#1e1d4a]" />
+          </div>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Social Feed
+          </span>
+        </div>
+
+        {/* Creatures */}
+        <div className="relative group">
+          <div
+            onClick={() => handleProtectedPageClick("/creatures")}
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+              pathname === "/creatures" ? "bg-[#dacfff]" : "bg-white"
+            }`}
+          >
+            <BookOpen className="w-10 h-10 text-[#1e1d4a]" />
+          </div>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            Creature Lore
+          </span>
+        </div>
+
+        {/* Profile */}
+        <div className="relative group">
+          <div
+            onClick={() => handleProtectedPageClick("/profile")}
+            className={`w-[80px] h-[80px] rounded-lg flex items-center justify-center cursor-pointer transition hover:brightness-110 ${
+              pathname === "/profile" ? "bg-[#dacfff]" : "bg-white"
+            }`}
+          >
+            <User className="w-10 h-10 text-[#1e1d4a]" />
+          </div>
+          <span className="absolute left-[90px] top-1/2 -translate-y-1/2 bg-[#dacfff] text-[#1e1d4a] px-4 py-1.5 rounded-r-lg text-base font-medium whitespace-nowrap shadow-md transform -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200">
+            My Profile
+          </span>
         </div>
       </div>
+
+
 
       {/* Guest Restriction Modal - UPDATED with modified handlers */}
       {showGuestModal && (

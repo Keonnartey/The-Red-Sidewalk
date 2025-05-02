@@ -116,7 +116,7 @@ const NewMapComponent = () => {
 
   return (
     <>
-      <div id="map" style={{ height: "90vh", width: "100%" }} />
+      <div id="map" style={{ height: "100vh", width: "100%" }} />
       {selectedSighting && (
         <SightingDetailsSidebar
           sighting={selectedSighting}
