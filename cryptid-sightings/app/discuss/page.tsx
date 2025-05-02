@@ -1,11 +1,43 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation" // Add these imports
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, MapPin, RefreshCw } from "lucide-react"
 import PostCard from "@/components/discuss/PostCard"
 import Sidebar from "@/components/sidebar"
+
+// Add this utility function for auth-checking fetch requests
+const authFetch = async (url, options = {}) => {
+  // Check if user is logged in
+  const token = sessionStorage.getItem('token');
+  const tokenType = sessionStorage.getItem('token_type');
+  const isGuestMode = sessionStorage.getItem('guestMode') === 'true';
+  
+  // For guest users or logged out users, redirect to login
+  if (!token && !tokenType && !isGuestMode) {
+    window.location.href = '/';
+    throw new Error('Not authenticated');
+  }
+  
+  // Add authorization header if not already present and if we have a token
+  if (token && tokenType) {
+    const headers = options.headers || {};
+    if (!headers['Authorization']) {
+      headers['Authorization'] = `${tokenType} ${token}`;
+    }
+    
+    // Return the fetch with auth headers
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
+  
+  // Regular fetch for guest users
+  return fetch(url, options);
+};
 
 interface Comment {
   comment_id: number
@@ -31,6 +63,9 @@ interface Post {
 }
 
 export default function DiscussPage() {
+  const router = useRouter() // Define router
+  const pathname = usePathname() // Define pathname
+  
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [friends, setFriends] = useState<Set<number>>(new Set())
@@ -49,7 +84,7 @@ export default function DiscussPage() {
   const [locationParts, setLocationParts] = useState<string[]>([])
 
   // 0️⃣ grab the logged-in user from sessionStorage
-   useEffect(() => {
+  useEffect(() => {
     const raw = sessionStorage.getItem("user")
     if (raw) {
       try {
@@ -67,27 +102,64 @@ export default function DiscussPage() {
     }
   }, [])
 
-  // 1️⃣ Fetch posts
-  async function fetchPosts() {
-    const res = await fetch("http://localhost:8000/discuss/posts")
-    if (!res.ok) throw new Error("Failed to fetch posts")
-    const data: Post[] = await res.json()
-    setPosts(data)
+  // Update the useEffect in your DiscussPage component
+  useEffect(() => {
+    // Check auth status on page load
+    const checkAuth = () => {
+      const token = sessionStorage.getItem('token');
+      const user = sessionStorage.getItem('user');
+      const isGuestMode = sessionStorage.getItem('guestMode') === 'true';
+      
+      if (!token && !user && !isGuestMode) {
+        // Not authenticated, redirect to login
+        router.push('/');
+      }
+    };
+    
+    checkAuth();
+    
+    // Add a storage event listener to detect changes
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [router]); // Only include router since pathname isn't used in the effect
 
-    // build datalist
-    const parts = new Set<string>()
-    data.forEach(p =>
-      p.location.split(",").forEach(chunk => parts.add(chunk.trim()))
-    )
-    setLocationParts([...parts])
+  // 1️⃣ Fetch posts with auth checking
+  async function fetchPosts() {
+    try {
+      const res = await authFetch("http://localhost:8000/discuss/posts");
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      const data: Post[] = await res.json();
+      setPosts(data);
+      
+      // build datalist
+      const parts = new Set<string>();
+      data.forEach(p =>
+        p.location.split(",").forEach(chunk => parts.add(chunk.trim()))
+      );
+      setLocationParts([...parts]);
+    } catch (err) {
+      console.error(err);
+      // If the error is auth-related, the authFetch will already redirect
+    }
   }
 
-  // 2️⃣ Fetch your friends
+  // 2️⃣ Fetch your friends with auth checking
   async function fetchFriends() {
-    const res = await fetch("http://localhost:8000/friends")
-    if (!res.ok) throw new Error("Failed to fetch friends")
-    const fids: number[] = await res.json()
-    setFriends(new Set(fids))
+    try {
+      const res = await authFetch("http://localhost:8000/friends");
+      if (!res.ok) throw new Error("Failed to fetch friends");
+      const fids: number[] = await res.json();
+      setFriends(new Set(fids));
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // Combined
@@ -108,20 +180,24 @@ export default function DiscussPage() {
 
   // 🔃 Toggle friend / unfriend
   async function handleToggleFriend(userId: number) {
-    // ← EDITED: don’t even try to friend yourself
+    // ← EDITED: don't even try to friend yourself
     if (currentUserId !== null && userId === currentUserId) return
 
-    const res = await fetch(`http://localhost:8000/friends/${userId}`, {
-      method: "POST",
-    })
-    if (!res.ok) return
-    const { action, friend_id } = await res.json()
-    setFriends(prev => {
-      const next = new Set(prev)
-      if (action === "added") next.add(friend_id)
-      else next.delete(friend_id)
-      return next
-    })
+    try {
+      const res = await authFetch(`http://localhost:8000/friends/${userId}`, {
+        method: "POST",
+      });
+      if (!res.ok) return;
+      const { action, friend_id } = await res.json();
+      setFriends(prev => {
+        const next = new Set(prev);
+        if (action === "added") next.add(friend_id);
+        else next.delete(friend_id);
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // 👍 Upvote once
@@ -129,29 +205,33 @@ export default function DiscussPage() {
     if (!currentUserId) return
     if (upvotedPosts.has(postId)) return
 
-    const res = await fetch(
-      `http://localhost:8000/discuss/posts/${postId}/upvote`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: 1,
-          user_id: currentUserId,
-        }),
+    try {
+      const res = await authFetch(
+        `http://localhost:8000/discuss/posts/${postId}/upvote`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: 1,
+            user_id: currentUserId,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (json.status === "success" || json.status === "already upvoted") {
+        setUpvotedPosts(p => new Set(p).add(postId));
+        if (json.status === "success") {
+          setPosts(ps =>
+            ps.map(p =>
+              p.post_id === postId
+                ? { ...p, upvotes: (p.upvotes ?? 0) + 1 }
+                : p
+            )
+          );
+        }
       }
-    )
-    const json = await res.json()
-    if (json.status === "success" || json.status === "already upvoted") {
-      setUpvotedPosts(p => new Set(p).add(postId))
-      if (json.status === "success") {
-        setPosts(ps =>
-          ps.map(p =>
-            p.post_id === postId
-              ? { ...p, upvotes: (p.upvotes ?? 0) + 1 }
-              : p
-          )
-        )
-      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -160,29 +240,33 @@ export default function DiscussPage() {
     if (!currentUserId) return
     if (downvotedPosts.has(postId)) return
 
-    const res = await fetch(
-      `http://localhost:8000/discuss/posts/${postId}/downvote`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: 1,
-          user_id: currentUserId,
-        }),
+    try {
+      const res = await authFetch(
+        `http://localhost:8000/discuss/posts/${postId}/downvote`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: 1,
+            user_id: currentUserId,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (json.status === "success" || json.status === "already downvoted") {
+        setDownvotedPosts(p => new Set(p).add(postId));
+        if (json.status === "success") {
+          setPosts(ps =>
+            ps.map(p =>
+              p.post_id === postId
+                ? { ...p, downvotes: (p.downvotes ?? 0) + 1 }
+                : p
+            )
+          );
+        }
       }
-    )
-    const json = await res.json()
-    if (json.status === "success" || json.status === "already downvoted") {
-      setDownvotedPosts(p => new Set(p).add(postId))
-      if (json.status === "success") {
-        setPosts(ps =>
-          ps.map(p =>
-            p.post_id === postId
-              ? { ...p, downvotes: (p.downvotes ?? 0) + 1 }
-              : p
-          )
-        )
-      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -190,33 +274,37 @@ export default function DiscussPage() {
   async function handleAddComment(postId: number, text: string) {
     if (!currentUserId) return
 
-    const res = await fetch(
-      `http://localhost:8000/discuss/posts/${postId}/comment`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          comment: text,
+    try {
+      const res = await authFetch(
+        `http://localhost:8000/discuss/posts/${postId}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            comment: text,
+            user_id: currentUserId,
+          }),
+        }
+      );
+      if (res.ok) {
+        const newC: Comment = {
+          comment_id: Date.now(),
           user_id: currentUserId,
-        }),
+          username: "You",
+          comment: text,
+          upvote_count: 0,
+          downvote_count: 0,
+        };
+        setPosts(ps =>
+          ps.map(p =>
+            p.post_id === postId
+              ? { ...p, comments: [...p.comments, newC] }
+              : p
+          )
+        );
       }
-    )
-    if (res.ok) {
-      const newC: Comment = {
-        comment_id: Date.now(),
-        user_id: currentUserId,
-        username: "You",
-        comment: text,
-        upvote_count: 0,
-        downvote_count: 0,
-      }
-      setPosts(ps =>
-        ps.map(p =>
-          p.post_id === postId
-            ? { ...p, comments: [...p.comments, newC] }
-            : p
-        )
-      )
+    } catch (err) {
+      console.error(err);
     }
   }
 

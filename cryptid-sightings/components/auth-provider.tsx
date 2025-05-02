@@ -344,26 +344,42 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Logout function
+
+  // 1. Update the logout function in AuthProvider.tsx
   const logout = () => {
+    // Clear auth tokens and user data
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('token_type');
     sessionStorage.removeItem('user');
-    sessionStorage.removeItem('guestMode');
-    setUser(null);
-    setIsAuthenticated(false);
-    setIsGuest(false);
-    router.push('/');
-  };
-
-  // Continue as guest function
-  const continueAsGuest = () => {
+    
+    // IMPORTANT: Set guest mode instead of completely logging out
     sessionStorage.setItem('guestMode', 'true');
-    setIsGuest(true);
-    setIsAuthenticated(false);
+    
+    // Update state
     setUser(null);
+    setIsAuthenticated(false);
+    setIsGuest(true); // Set to guest mode
+    
+    // Navigate to map page (guests can access it)
     router.push('/map');
   };
-
+  const continueAsGuest = () => {
+  // Clear any existing auth data first (just to be safe)
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('token_type');
+  sessionStorage.removeItem('user');
+  
+  // Set guest mode flag
+  sessionStorage.setItem('guestMode', 'true');
+  
+  // Update state
+  setUser(null);
+  setIsAuthenticated(false);
+  setIsGuest(true);
+  
+  // Navigate to map page
+  router.push('/map');
+};
   return (
     <AuthContext.Provider
       value={{

@@ -168,8 +168,17 @@ const ForgotPasswordPage: React.FC = () => {
       });
       
       if (response.ok) {
-        setCurrentStep('success');
+        // Set success status
         setStatus({ type: 'success', message: 'Your password has been reset successfully!' });
+        
+        // IMPORTANT: Add a redirect to localhost:3000 after successful password reset
+        setTimeout(() => {
+          // Use window.location.href for a hard redirect instead of router.push
+          // This ensures a full page reload and avoids any Next.js routing issues
+          window.location.href = 'http://localhost:3000';
+        }, 1500); // Short delay to show the success message
+        
+        setCurrentStep('success');
       } else {
         const errorData = await response.json();
         setStatus({ 
@@ -186,6 +195,11 @@ const ForgotPasswordPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  // IMPORTANT: Modified to redirect to localhost:3000
+  const handleReturnToLogin = () => {
+    window.location.href = 'http://localhost:3000';
   };
   
   return (
@@ -233,9 +247,13 @@ const ForgotPasswordPage: React.FC = () => {
           </button>
           
           <div className="mt-4 text-center">
-            <Link href="/" className="text-sm text-blue-600 hover:underline">
+            <button 
+              type="button"
+              onClick={handleReturnToLogin}
+              className="text-sm text-blue-600 hover:underline"
+            >
               Back to Login
-            </Link>
+            </button>
           </div>
         </form>
       )}
@@ -356,12 +374,12 @@ const ForgotPasswordPage: React.FC = () => {
             Your password has been reset successfully. You can now log in with your new password.
           </p>
           
-          <Link
-            href="/"
+          <button
+            onClick={handleReturnToLogin}
             className="w-full inline-block py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Return to Login
-          </Link>
+          </button>
         </div>
       )}
     </div>

@@ -100,6 +100,14 @@ export default function UserProfilePage({
   const { userId } = React.use(params);
   const router = useRouter();
 
+  // State declarations
+  const [activeTab, setActiveTab] = useState<"general" | "socialness" | "badges" | "settings">("general");
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [modalBadgeKey, setModalBadgeKey] = useState<string | null>(null);
+
   // State for settings tab
   const [aboutMe, setAboutMe] = useState("");
   const [hometownCity, setHometownCity] = useState("");
@@ -116,21 +124,6 @@ export default function UserProfilePage({
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-  // Debug logging for profile data
-  useEffect(() => {
-    if (profileData) {
-      console.log("Profile Data:", profileData);
-      console.log("User Data:", profileData.user);
-      console.log("Sightings:", profileData.sightings);
-    }
-  }, [profileData]);
-  const [activeTab, setActiveTab] = useState<"general" | "socialness" | "badges" | "settings">("general");
-  const [profileData, setProfileData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const [modalBadgeKey, setModalBadgeKey] = useState<string | null>(null);
-
   // determine if it's your own profile
   useEffect(() => {
     const stored = sessionStorage.getItem("user");
@@ -141,6 +134,15 @@ export default function UserProfilePage({
       }
     }
   }, [userId]);
+
+  // Debug logging for profile data
+  useEffect(() => {
+    if (profileData) {
+      console.log("Profile Data:", profileData);
+      console.log("User Data:", profileData.user);
+      console.log("Sightings:", profileData.sightings);
+    }
+  }, [profileData]);
 
   // fetch profile data
   useEffect(() => {
@@ -164,7 +166,9 @@ export default function UserProfilePage({
         setLoading(false);
       }
     }
-  }, [userId, API_BASE_URL]);
+    
+    fetchProfile();
+  }, [userId]);
 
   // Populate form fields when profileData changes
   useEffect(() => {
@@ -177,10 +181,11 @@ export default function UserProfilePage({
   }, [profileData]);
 
   // Handle profile information update
+// Handle profile information update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     
-    if (!isCurrentUser || !userData) {
+    if (!isCurrentUser) {
       setUpdateStatus({
         type: 'error',
         message: 'You can only update your own profile.'
@@ -202,17 +207,40 @@ export default function UserProfilePage({
         throw new Error("Authentication required");
       }
       
+      // Get current user data from session storage
+      const storedUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+      
       // Create form data for profile info
       const formData = new FormData();
-      formData.append('user_id', userData.id);
-      formData.append('first_name', userData.first_name || "");
-      formData.append('last_name', userData.last_name || "");
+      
+      // Must use the correct field names and values that the API expects
+      formData.append('user_id', storedUser.id || profileData.user.user_id);
+      
+      // Extract first and last name properly
+      let firstName = "";
+      let lastName = "";
+      
+      if (storedUser.first_name && storedUser.last_name) {
+        firstName = storedUser.first_name;
+        lastName = storedUser.last_name;
+      } else if (profileData.user.full_name) {
+        const nameParts = profileData.user.full_name.split(' ');
+        firstName = nameParts[0] || "";
+        lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : "";
+      }
+      
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
       formData.append('about_me', aboutMe);
       formData.append('hometown_city', hometownCity);
       formData.append('hometown_state', hometownState);
       formData.append('hometown_country', hometownCountry);
       
-      console.log("Updating profile with form data:", {
+      // Log what we're sending for debugging
+      console.log("Updating profile with:", {
+        user_id: storedUser.id || profileData.user.user_id,
+        first_name: firstName,
+        last_name: lastName,
         about_me: aboutMe,
         hometown_city: hometownCity,
         hometown_state: hometownState,
@@ -227,13 +255,14 @@ export default function UserProfilePage({
         body: formData
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to update profile");
+        console.error("Failed API response:", responseData);
+        throw new Error(responseData.detail || "Failed to update profile");
       }
       
-      const updatedProfile = await response.json();
-      console.log("Profile updated:", updatedProfile);
+      console.log("Profile updated successfully:", responseData);
       
       // Update local state with new data
       setProfileData({
@@ -318,7 +347,7 @@ export default function UserProfilePage({
 
   // Handle profile picture upload
   const handleUploadProfilePic = async () => {
-    if (!profilePicFile || !isCurrentUser || !userData) {
+    if (!profilePicFile || !isCurrentUser) {
       return;
     }
     
@@ -336,22 +365,45 @@ export default function UserProfilePage({
         throw new Error("Authentication required");
       }
       
-      // Create form data for profile pic - EXACTLY like account creation
-      const formData = new FormData();
-      formData.append('user_id', userData.id);
-      formData.append('first_name', userData.first_name || "");
-      formData.append('last_name', userData.last_name || "");
+      // Get current user data from session storage for more reliable data
+      const storedUser = JSON.parse(sessionStorage.getItem('user') || '{}');
       
-      // Include all other fields with their current values to avoid clearing them
-      formData.append('about_me', aboutMe || "");
-      if (hometownCity) formData.append('hometown_city', hometownCity);
-      if (hometownState) formData.append('hometown_state', hometownState);
-      if (hometownCountry) formData.append('hometown_country', hometownCountry);
+      // Create form data for profile pic
+      const formData = new FormData();
+      
+      // Use stored user data if available, fall back to profile data
+      formData.append('user_id', storedUser.id || profileData.user.user_id);
+      
+      // Extract first and last name properly
+      let firstName = "";
+      let lastName = "";
+      
+      if (storedUser.first_name && storedUser.last_name) {
+        firstName = storedUser.first_name;
+        lastName = storedUser.last_name;
+      } else if (profileData.user.full_name) {
+        const nameParts = profileData.user.full_name.split(' ');
+        firstName = nameParts[0] || "";
+        lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : "";
+      }
+      
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      
+      // Include all other fields with their current values
+      formData.append('about_me', aboutMe || profileData.user.about_me || "");
+      formData.append('hometown_city', hometownCity || profileData.user.hometown_city || "");
+      formData.append('hometown_state', hometownState || profileData.user.hometown_state || "");
+      formData.append('hometown_country', hometownCountry || profileData.user.hometown_country || "");
       
       // Include the profile picture
       formData.append('profile_pic', profilePicFile);
       
-      console.log("Uploading profile picture:", profilePicFile.name);
+      console.log("Uploading profile picture:", {
+        fileName: profilePicFile.name,
+        fileSize: profilePicFile.size,
+        fileType: profilePicFile.type
+      });
       
       const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'POST',
@@ -361,20 +413,21 @@ export default function UserProfilePage({
         body: formData
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to upload profile picture");
+        console.error("Failed API response:", responseData);
+        throw new Error(responseData.detail || "Failed to upload profile picture");
       }
       
-      const updatedProfile = await response.json();
-      console.log("Profile updated with new picture:", updatedProfile);
+      console.log("Profile updated with new picture:", responseData);
       
       // Update local state with new data
       setProfileData({
         ...profileData,
         user: {
           ...profileData.user,
-          profile_pic: updatedProfile.profile_pic
+          profile_pic: responseData.profile_pic
         }
       });
       
@@ -387,9 +440,6 @@ export default function UserProfilePage({
       setProfilePicFile(null);
       setProfilePicPreview(null);
       
-      // Optionally refresh to ensure latest image is displayed
-      // window.location.reload();
-      
     } catch (error) {
       console.error("Error uploading profile picture:", error);
       setUploadStatus({
@@ -400,13 +450,18 @@ export default function UserProfilePage({
       setIsUploading(false);
     }
   };
-    fetchProfile();
-  }, [userId]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
-    localStorage.clear();
-    router.push("/");
+    // Clear auth tokens and user data
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('token_type');
+    sessionStorage.removeItem('user');
+    
+    // IMPORTANT: Set guest mode instead of completely logging out
+    sessionStorage.setItem('guestMode', 'true');
+    
+    // Navigate to map page (guests can access it)
+    router.push('/map');
   };
 
   if (loading)
@@ -621,7 +676,7 @@ export default function UserProfilePage({
         return (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-semibold mb-4">Badges You’ve Earned</h3>
+              <h3 className="font-semibold mb-4">Badges You've Earned</h3>
               <BadgeGrid
                 badges={earnedBadges}
                 onBadgeClick={(key) => setModalBadgeKey(key)}
@@ -836,8 +891,6 @@ export default function UserProfilePage({
     }
   };
      
-
-
   return (
     <div className="min-h-screen bg-[#1e2a44] flex">
       <aside className="fixed top-0 left-0 h-full w-[130px] bg-[#2d2a44]">
