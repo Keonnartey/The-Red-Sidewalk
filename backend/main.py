@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -77,6 +78,7 @@ app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discuss.router, prefix="/discuss", tags=["Discuss"])
 app.include_router(ratings.router, prefix="/ratings", tags=["Ratings"])
 
+
 app.include_router(
     content_flags.router, prefix="/content_flags", tags=["Content_Flagging"]
 )
@@ -84,5 +86,14 @@ app.include_router(friends.router, prefix="/friends", tags=["Friends"])
 app.include_router(profile.router, prefix="/api/profile", tags=["Profile"])
 
 
+# Add this route to serve static profile pictures
+@app.get("/api/static/uploads/profile_pictures/{filename}")
+async def get_profile_picture(filename: str):
+    file_path = f"static/uploads/profile_pictures/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    return {"error": "File not found"}, 404
+
+
 # Mount static files directories
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/uploads", StaticFiles(directory="static/uploads"), name="uploads")

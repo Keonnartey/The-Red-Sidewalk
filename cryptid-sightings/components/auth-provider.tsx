@@ -52,7 +52,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 // Public routes that don't require authentication
-const publicRoutes = ['/', '/login', '/register', '/signup'];
+const publicRoutes = ['/', '/login', '/register', '/signup', '/forgot-password', ''];
 
 // Routes allowed for guests
 const guestAllowedRoutes = ['/map'];
@@ -67,18 +67,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Check if the current route is public
-  const isPublicRoute = publicRoutes.includes(pathname);
-  
-  // Check if the current route is allowed for guests
-  const isGuestAllowedRoute = guestAllowedRoutes.includes(pathname);
-
   // Initialize auth state
   useEffect(() => {
     console.log("Auth initialization started");
     let isMounted = true; // For handling async operations during unmount
     
-
     const initAuth = async () => {
       try {
         // Check for guest mode first
@@ -189,7 +182,17 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only handle redirects when loading is complete
     if (!isLoading) {
-      console.log("Route protection check: authenticated =", isAuthenticated, "guest =", isGuest, "public route =", isPublicRoute, "guest allowed =", isGuestAllowedRoute);
+      // IMPORTANT FIX: Calculate isPublicRoute inside the useEffect to ensure it's updated when pathname changes
+      const isPublicRoute = publicRoutes.includes(pathname);
+      const isGuestAllowedRoute = guestAllowedRoutes.includes(pathname);
+      
+      console.log("Route protection check:", {
+        path: pathname,
+        authenticated: isAuthenticated,
+        guest: isGuest,
+        publicRoute: isPublicRoute,
+        guestAllowed: isGuestAllowedRoute
+      });
       
       if (isGuest) {
         // Handle guest mode routing
@@ -210,7 +213,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/map');
       }
     }
-  }, [isAuthenticated, isGuest, isLoading, pathname, router, isPublicRoute, isGuestAllowedRoute]);
+  }, [isAuthenticated, isGuest, isLoading, pathname, router]); // Remove isPublicRoute and isGuestAllowedRoute from dependencies
 
   // Login function
   const login = async (email: string, password: string): Promise<void> => {
@@ -271,77 +274,74 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Sign up function
-const signUp = async (userData: SignUpData): Promise<void> => {
-  setIsLoading(true);
-  
-  try {
-    const API_BASE_URL = 'http://localhost:8000';
+  const signUp = async (userData: SignUpData): Promise<void> => {
+    setIsLoading(true);
     
-    // First, register the user account
-    const registerResponse = await fetch(`${API_BASE_URL}/api/users/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: userData.email,
-        password: userData.password,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        username: userData.email.split('@')[0] // Generate username from email
-      }),
-    });
-    
-    if (!registerResponse.ok) {
-      const errorData = await registerResponse.json();
-      throw new Error(errorData.detail || 'Registration failed');
-    }
-    
-    const newUserData = await registerResponse.json();
-    
-    // If we have profile data to upload, do that next
-    if (userData.userAddress || userData.aboutMe || userData.birthday || userData.profilePic) {
-      // Create form data for profile info
-      const profileFormData = new FormData();
-      profileFormData.append('user_id', newUserData.id.toString());
-      profileFormData.append('full_name', `${userData.firstName} ${userData.lastName}`);
+    try {
+      const API_BASE_URL = 'http://localhost:8000';
       
-      if (userData.userAddress) {
-        profileFormData.append('user_address', userData.userAddress);
-      }
-      
-      if (userData.aboutMe) {
-        profileFormData.append('about_me', userData.aboutMe);
-      }
-      
-      if (userData.birthday) {
-        profileFormData.append('birthday', userData.birthday);
-      }
-      
-      if (userData.profilePic) {
-        profileFormData.append('profile_pic', userData.profilePic);
-      }
-      
-      // Upload profile information
-      await fetch(`${API_BASE_URL}/api/users/profile`, {
+      // First, register the user account
+      const registerResponse = await fetch(`${API_BASE_URL}/api/users/register`, {
         method: 'POST',
-        body: profileFormData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          username: userData.email.split('@')[0] // Generate username from email
+        }),
       });
+      
+      if (!registerResponse.ok) {
+        const errorData = await registerResponse.json();
+        throw new Error(errorData.detail || 'Registration failed');
+      }
+      
+      const newUserData = await registerResponse.json();
+      
+      // If we have profile data to upload, do that next
+      if (userData.userAddress || userData.aboutMe || userData.birthday || userData.profilePic) {
+        // Create form data for profile info
+        const profileFormData = new FormData();
+        profileFormData.append('user_id', newUserData.id.toString());
+        profileFormData.append('full_name', `${userData.firstName} ${userData.lastName}`);
+        
+        if (userData.userAddress) {
+          profileFormData.append('user_address', userData.userAddress);
+        }
+        
+        if (userData.aboutMe) {
+          profileFormData.append('about_me', userData.aboutMe);
+        }
+        
+        if (userData.birthday) {
+          profileFormData.append('birthday', userData.birthday);
+        }
+        
+        if (userData.profilePic) {
+          profileFormData.append('profile_pic', userData.profilePic);
+        }
+        
+        // Upload profile information
+        await fetch(`${API_BASE_URL}/api/users/profile`, {
+          method: 'POST',
+          body: profileFormData,
+        });
+      }
+      
+      // Automatically log in after successful registration
+      await login(userData.email, userData.password);
+      
+    } catch (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Automatically log in after successful registration
-    await login(userData.email, userData.password);
-    
-  } catch (error) {
-    console.error('Sign up error:', error);
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-    
-
+  };
 
   // Logout function
   const logout = () => {

@@ -155,9 +155,9 @@ const handleSubmit = async (e: React.FormEvent) => {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <a href="#" className="text-sm text-blue-600 hover:underline">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
           <input
             type="password"

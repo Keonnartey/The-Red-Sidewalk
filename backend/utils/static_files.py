@@ -7,7 +7,7 @@ def setup_static_files(app: FastAPI):
     """Configure static file serving for uploads"""
 
     # Create uploads directory if it doesn't exist
-    upload_dir = "uploads"
+    upload_dir = "static/uploads"  # Changed from "uploads" to "static/uploads"
     os.makedirs(upload_dir, exist_ok=True)
 
     # Mount the uploads directory
