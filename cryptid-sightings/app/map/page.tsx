@@ -28,6 +28,8 @@ export default function MapPage() {
 
     console.log("📡 useEffect ran:", { launchFilterAfterRoute, launchReportAfterRoute });
 
+    setShowReportForm(false);
+
     if (launchFilterAfterRoute) {
       setShowFilter(true);
       setLaunchFilterAfterRoute(false);
