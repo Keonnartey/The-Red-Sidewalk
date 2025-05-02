@@ -31,8 +31,7 @@ interface Post {
 }
 
 export default function DiscussPage() {
-  const CURRENT_USER_ID = 1
-
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [friends, setFriends] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
@@ -48,6 +47,25 @@ export default function DiscussPage() {
 
   // For our <datalist>
   const [locationParts, setLocationParts] = useState<string[]>([])
+
+  // 0️⃣ grab the logged-in user from sessionStorage
+   useEffect(() => {
+    const raw = sessionStorage.getItem("user")
+    if (raw) {
+      try {
+        const u = JSON.parse(raw)
+        // ← EDITED: try several fields until we find a numeric ID
+        const id =
+          (typeof u.id === "number" && u.id) ||
+          (typeof u.user_id === "number" && u.user_id) ||
+          (u.user && typeof u.user.id === "number" && u.user.id) ||
+          null
+        setCurrentUserId(id)
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
 
   // 1️⃣ Fetch posts
   async function fetchPosts() {
@@ -90,6 +108,9 @@ export default function DiscussPage() {
 
   // 🔃 Toggle friend / unfriend
   async function handleToggleFriend(userId: number) {
+    // ← EDITED: don’t even try to friend yourself
+    if (currentUserId !== null && userId === currentUserId) return
+
     const res = await fetch(`http://localhost:8000/friends/${userId}`, {
       method: "POST",
     })
@@ -105,13 +126,18 @@ export default function DiscussPage() {
 
   // 👍 Upvote once
   async function handleUpvotePost(postId: number) {
+    if (!currentUserId) return
     if (upvotedPosts.has(postId)) return
+
     const res = await fetch(
       `http://localhost:8000/discuss/posts/${postId}/upvote`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 1 }),
+        body: JSON.stringify({
+          amount: 1,
+          user_id: currentUserId,
+        }),
       }
     )
     const json = await res.json()
@@ -131,13 +157,18 @@ export default function DiscussPage() {
 
   // 👎 Downvote once
   async function handleDownvotePost(postId: number) {
+    if (!currentUserId) return
     if (downvotedPosts.has(postId)) return
+
     const res = await fetch(
       `http://localhost:8000/discuss/posts/${postId}/downvote`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 1 }),
+        body: JSON.stringify({
+          amount: 1,
+          user_id: currentUserId,
+        }),
       }
     )
     const json = await res.json()
@@ -157,18 +188,23 @@ export default function DiscussPage() {
 
   // 💬 Comment
   async function handleAddComment(postId: number, text: string) {
+    if (!currentUserId) return
+
     const res = await fetch(
       `http://localhost:8000/discuss/posts/${postId}/comment`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comment: text }),
+        body: JSON.stringify({
+          comment: text,
+          user_id: currentUserId,
+        }),
       }
     )
     if (res.ok) {
       const newC: Comment = {
         comment_id: Date.now(),
-        user_id: CURRENT_USER_ID,
+        user_id: currentUserId,
         username: "You",
         comment: text,
         upvote_count: 0,
@@ -284,7 +320,7 @@ export default function DiscussPage() {
                 disableUpvote={upvotedPosts.has(p.post_id)}
                 disableDownvote={downvotedPosts.has(p.post_id)}
                 isFriend={friends.has(p.user_id)}
-                canToggleFriend={p.user_id !== CURRENT_USER_ID}
+                canToggleFriend={currentUserId !== null && p.user_id !== currentUserId}
                 onToggleFriend={() => handleToggleFriend(p.user_id)}
                 imageClassName="max-w-sm w-full h-auto object-cover rounded-lg shadow-lg mx-auto"
               />

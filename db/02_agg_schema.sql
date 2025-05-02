@@ -195,7 +195,6 @@ CREATE TABLE IF NOT EXISTS profile.users (
     hometown_state VARCHAR(100),
     hometown_country VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES profile.security(user_id) ON DELETE CASCADE
 );
 

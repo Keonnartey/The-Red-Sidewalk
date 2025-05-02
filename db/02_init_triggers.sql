@@ -422,116 +422,140 @@ FOR EACH ROW EXECUTE FUNCTION trigger_update_stats_on_friend();
 ------------------------------------------------------------
 -- Function to recompute ALL badges for a given user
 ------------------------------------------------------------
-CREATE OR REPLACE FUNCTION profile.update_user_badges(user_id_input INT)
-RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION profile.update_user_badges()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_id_input INT;
 BEGIN
-  UPDATE profile.user_badges_real ub
-  SET
-    -- saw at least one Bigfoot?
-    bigfoot_amateur = (
-      SELECT COUNT(*) >= 1
-      FROM info.sightings_preview
-      WHERE user_id = user_id_input
-        AND creature_id = (
-          SELECT creature_id
-            FROM agg.creatures
-           WHERE lower(creature_name) = 'bigfoot'
+    -- Determine the triggering table and extract user_id accordingly
+    IF TG_TABLE_NAME = 'sightings_preview' THEN
+        user_id_input := NEW.user_id;
+
+    ELSIF TG_TABLE_NAME = 'social' THEN
+        user_id_input := NEW.user_id;
+
+    ELSIF TG_TABLE_NAME = 'interactions' THEN
+        user_id_input := NEW.user_id;
+
+    ELSIF TG_TABLE_NAME = 'ratings' THEN
+        user_id_input := NEW.user_id;
+
+    ELSIF TG_TABLE_NAME = 'sightings_imgs' THEN
+        -- Look up user_id via the related sighting
+        SELECT user_id INTO user_id_input
+        FROM info.sightings_preview
+        WHERE sighting_id = NEW.sighting_id;
+
+    ELSE
+        RAISE EXCEPTION 'Unhandled triggering table: %', TG_TABLE_NAME;
+    END IF;
+
+    -- If user_id_input still somehow null, raise exception
+    IF user_id_input IS NULL THEN
+        RAISE EXCEPTION 'user_id_input is NULL in update_user_badges(). Check your trigger and data.';
+    END IF;
+
+    -- Ensure the user has a record in user_badges_real
+    INSERT INTO profile.user_badges_real (user_id)
+    SELECT user_id_input
+    WHERE NOT EXISTS (
+        SELECT 1 FROM profile.user_badges_real WHERE user_id = user_id_input
+    );
+
+    -- Update the user's badge states
+    UPDATE profile.user_badges_real ub
+    SET
+        bigfoot_amateur = (
+            SELECT COUNT(*) >= 1
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+              AND creature_id = (
+                  SELECT creature_id FROM agg.creatures WHERE lower(creature_name) = 'bigfoot'
+              )
+        ),
+        lets_be_friends = (
+            SELECT COUNT(*) >= 1
+            FROM profile.social
+            WHERE user_id = user_id_input
+        ),
+        elite_hunter = (
+            SELECT COUNT(DISTINCT creature_id)
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+        ) = (SELECT COUNT(*) FROM agg.creatures),
+        socialite = (
+            SELECT COUNT(*) >= 1
+            FROM social.interactions
+            WHERE user_id = user_id_input
+        ),
+        diversify = (
+            SELECT COUNT(DISTINCT creature_id)
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+        ) >= 2,
+        well_traveled = (
+            SELECT COUNT(DISTINCT location_name)
+            FROM info.sightings_preview
+            WHERE user_id = user_id_input
+        ) >= 5,
+        hallucinator = (
+            SELECT COUNT(*) >= 3
+            FROM social.ratings
+            WHERE user_id = user_id_input
+              AND rating = 1
+        ),
+        camera_ready = (
+            SELECT COUNT(*) >= 1
+            FROM info.sightings_imgs si
+            JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+            WHERE sp.user_id = user_id_input
+        ),
+        dragon_rider = (
+            SELECT COUNT(*) >= 1
+            FROM info.sightings_imgs si
+            JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
+            JOIN agg.creatures c ON sp.creature_id = c.creature_id
+            WHERE sp.user_id = user_id_input
+              AND lower(c.creature_name) = 'dragon'
         )
-    ),
-    -- made at least one friend?
-    lets_be_friends = (
-      SELECT COUNT(*) >= 1
-      FROM profile.social
-      WHERE user_id = user_id_input
-    ),
-    -- found every creature at least once?
-    elite_hunter = (
-      SELECT COUNT(DISTINCT creature_id)
-      FROM info.sightings_preview
-      WHERE user_id = user_id_input
-    ) = (SELECT COUNT(*) FROM agg.creatures),
-    -- left at least one comment?
-    socialite = (
-      SELECT COUNT(*) >= 1
-      FROM social.interactions
-      WHERE user_id = user_id_input
-    ),
-    -- saw at least two different creature types?
-    diversify = (
-      SELECT COUNT(DISTINCT creature_id)
-      FROM info.sightings_preview
-      WHERE user_id = user_id_input
-    ) >= 2,
-    -- posted sightings in ≥5 distinct locations?
-    well_traveled = (
-      SELECT COUNT(DISTINCT location_name)
-      FROM info.sightings_preview
-      WHERE user_id = user_id_input
-    ) >= 5,
-    -- given at least three 1-star ratings?
-    hallucinator = (
-      SELECT COUNT(*) >= 3
-      FROM social.ratings
-      WHERE user_id = user_id_input
-        AND rating = 1
-    ),
-    -- uploaded at least one photo?
-    camera_ready = (
-      SELECT COUNT(*) >= 1
-      FROM info.sightings_imgs si
-      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
-      WHERE sp.user_id = user_id_input
-    ),
-    -- uploaded a dragon selfie?
-    dragon_rider = (
-      SELECT COUNT(*) >= 1
-      FROM info.sightings_imgs si
-      JOIN info.sightings_preview sp ON si.sighting_id = sp.sighting_id
-      JOIN agg.creatures c           ON sp.creature_id = c.creature_id
-      WHERE sp.user_id = user_id_input
-        AND lower(c.creature_name) = 'dragon'
-    )
-  WHERE ub.user_id = user_id_input;
+    WHERE ub.user_id = user_id_input;
+
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-
-------------------------------------------------------------
--- Triggers to fire badge recalculation
-------------------------------------------------------------
+-- Now fix all the triggers to not pass parameters
 -- Whenever someone logs a new sighting:
 DROP TRIGGER IF EXISTS trg_badges_on_sighting ON info.sightings_preview;
 CREATE TRIGGER trg_badges_on_sighting
   AFTER INSERT ON info.sightings_preview
   FOR EACH ROW
-EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+EXECUTE FUNCTION profile.update_user_badges();
 
 -- Whenever someone adds a friend:
 DROP TRIGGER IF EXISTS trg_badges_on_friend ON profile.social;
 CREATE TRIGGER trg_badges_on_friend
-  AFTER INSERT ON profile.social
+  AFTER INSERT OR UPDATE ON profile.social
   FOR EACH ROW
-EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+EXECUTE FUNCTION profile.update_user_badges();
 
 -- Whenever someone leaves a comment:
 DROP TRIGGER IF EXISTS trg_badges_on_comment ON social.interactions;
 CREATE TRIGGER trg_badges_on_comment
   AFTER INSERT ON social.interactions
   FOR EACH ROW
-EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+EXECUTE FUNCTION profile.update_user_badges();
 
 -- Whenever someone rates a sighting:
 DROP TRIGGER IF EXISTS trg_badges_on_rating ON social.ratings;
 CREATE TRIGGER trg_badges_on_rating
   AFTER INSERT OR UPDATE ON social.ratings
   FOR EACH ROW
-EXECUTE FUNCTION profile.update_user_badges(NEW.user_id);
+EXECUTE FUNCTION profile.update_user_badges();
 
 -- Whenever someone uploads a photo:
 DROP TRIGGER IF EXISTS trg_badges_on_photo ON info.sightings_imgs;
 CREATE TRIGGER trg_badges_on_photo
   AFTER INSERT ON info.sightings_imgs
   FOR EACH ROW
-EXECUTE FUNCTION profile.update_user_badges(
-    (SELECT user_id FROM info.sightings_preview WHERE sighting_id = NEW.sighting_id)
-);
+EXECUTE FUNCTION profile.update_user_badges();
