@@ -1,19 +1,19 @@
 version: '3'
 services:
-  db:
-    image: postgis/postgis:15-3.3
-    container_name: redsidewalk-db
-    environment:
-      POSTGRES_USER: redsidewalk_user       # PostgreSQL username
-      POSTGRES_PASSWORD: securepassword     # PostgreSQL password
-      POSTGRES_DB: redsidewalk              # PostgreSQL database name
-    ports:
-      - "5432:5432"                         # Exposes port 5432 for local access
-    volumes:
-      - ./db:/docker-entrypoint-initdb.d 
-      # Initializes DB with dump
-      - postgres_data:/var/lib/postgresql/data
-      # persistent volume after container stops
+#  db:
+#    image: postgis/postgis:15-3.3
+#    container_name: redsidewalk-db
+#    environment:
+#      POSTGRES_USER: redsidewalk_user       # PostgreSQL username
+#      POSTGRES_PASSWORD: securepassword     # PostgreSQL password
+#      POSTGRES_DB: redsidewalk              # PostgreSQL database name
+#    ports:
+#      - "5432:5432"                         # Exposes port 5432 for local access
+#    volumes:
+#      - ./db:/docker-entrypoint-initdb.d 
+#      # Initializes DB with dump
+#      - postgres_data:/var/lib/postgresql/data
+#      # persistent volume after container stops
 
 
   backend:
@@ -25,8 +25,7 @@ services:
       - ./backend/.env
     ports:
       - "8000:8000"
-    depends_on:
-      - db
+
 
   frontend:
     build: ./cryptid-sightings
@@ -38,7 +37,8 @@ services:
       - /app/node_modules # Avoid overwriting node_modules
     command: npm run dev
     depends_on:
-      - backend
+      - backend  
+
 
 
 volumes:
